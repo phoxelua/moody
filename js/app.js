@@ -469,6 +469,68 @@ const homeChip = document.querySelector(
 );
 if (homeChip) homeChip.classList.add('selected');
 
+// --- Pre-fill from today's earlier submission ---
+function prefillForm(entry) {
+  // Happiness
+  if (entry.happiness) {
+    const face = document.querySelector(
+      `#happiness .face[data-value="${entry.happiness}"]`,
+    );
+    if (face) face.classList.add('selected');
+  }
+
+  // Sleep
+  if (entry.sleep) {
+    const btn = document.querySelector(
+      `#sleep .scale-btn[data-value="${entry.sleep}"]`,
+    );
+    if (btn) btn.classList.add('selected');
+  }
+
+  // Ate
+  if (entry.ate) {
+    const btn = document.querySelector(
+      `#ate .scale-btn[data-value="${entry.ate}"]`,
+    );
+    if (btn) btn.classList.add('selected');
+  }
+
+  // Chips (emotions, social, activities)
+  const chipSections = [
+    { key: 'emotions', mainId: 'emotion-chips', expandedId: 'emotion-expanded' },
+    { key: 'social', mainId: 'social-chips', expandedId: 'social-expanded' },
+    { key: 'activities', mainId: 'activity-chips', expandedId: 'activity-expanded' },
+  ];
+  for (const section of chipSections) {
+    const values = entry[section.key] || [];
+    // Clear auto-selections first
+    document
+      .querySelectorAll(`#${section.mainId} .chip.selected, #${section.expandedId} .chip.selected`)
+      .forEach((c) => c.classList.remove('selected'));
+    for (const val of values) {
+      const chip =
+        document.querySelector(`#${section.mainId} .chip[data-value="${val}"]`) ||
+        document.querySelector(`#${section.expandedId} .chip[data-value="${val}"]`);
+      if (chip) chip.classList.add('selected');
+    }
+  }
+
+  // Text fields
+  if (entry.grateful) {
+    document.getElementById('grateful').value = entry.grateful;
+  }
+  if (entry.note) {
+    document.getElementById('note').value = entry.note;
+  }
+
+  checkFormValidity();
+}
+
+const todayEntry = window.MoodyStorage.getTodayEntry();
+if (todayEntry) {
+  prefillForm(todayEntry);
+}
+
 // --- Header meta (date + location + weather) ---
 const headerMeta = document.getElementById('header-meta');
 const dateStr = today.toLocaleDateString('en-US', {
