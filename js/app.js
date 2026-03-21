@@ -349,8 +349,52 @@ document.querySelectorAll('.chip-grid').forEach((grid) => {
     }
 
     chip.classList.toggle('selected');
+
+    // If selected from expanded section, move it up to main grid
+    if (chip.classList.contains('selected') && chip.closest('.chip-grid--expanded')) {
+      const expandedGrid = chip.closest('.chip-grid--expanded');
+      const mainGridId = expandedGrid.id.replace('-expanded', '-chips');
+      const mainGrid = document.getElementById(mainGridId);
+      const moreBtn = mainGrid.querySelector('.chip--more');
+      mainGrid.insertBefore(chip, moreBtn);
+    }
+
     checkFormValidity();
     saveFormState();
+  });
+});
+
+// --- Custom chip inputs (create chip on Enter) ---
+document.querySelectorAll('.chip-custom').forEach((input) => {
+  function createCustomChip() {
+    const val = input.value.trim();
+    if (!val) return;
+    const sectionId = input.dataset.section;
+    const mainGrid = document.getElementById(sectionId);
+    const moreBtn = mainGrid.querySelector('.chip--more');
+    // Determine chip class from section
+    const sectionType = sectionId.replace('-chips', '');
+    const classMap = { emotion: 'chip--positive', social: 'chip--social', activity: 'chip--activity' };
+    const chipClass = classMap[sectionType] || '';
+    const chip = document.createElement('button');
+    chip.className = `chip ${chipClass} selected`;
+    chip.dataset.value = val;
+    chip.textContent = val;
+    chip.addEventListener('click', () => {
+      chip.classList.toggle('selected');
+      checkFormValidity();
+      saveFormState();
+    });
+    mainGrid.insertBefore(chip, moreBtn);
+    input.value = '';
+    checkFormValidity();
+    saveFormState();
+  }
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      createCustomChip();
+    }
   });
 });
 
@@ -457,11 +501,22 @@ submitBtn.addEventListener('click', async () => {
   submitBtn.disabled = true;
 
   // Sync to Google Sheets in the background
-  if (window.MoodySheets.isSignedIn()) {
+  if (window.MoodySheets.hasConnected()) {
     try {
       await window.MoodySheets.saveRow(entry);
       window.MoodyErrors.logSuccess('sheets', 'Synced to Google Sheets');
       showSync('Synced to Google Sheets');
+      // Request notification permission on first save (needs user gesture on iOS)
+      if (!window.MoodyNotifications.isEnabled()) {
+        const granted = await window.MoodyNotifications.requestPermission();
+        if (granted) {
+          window.MoodyNotifications.enable();
+          window.MoodyNotifications.scheduleNightly();
+          window.MoodyErrors.logSuccess('notifications', 'Notifications enabled');
+        } else {
+          window.MoodyErrors.logError('notifications', 'Notification permission denied');
+        }
+      }
       // Auto-close after successful sync
       setTimeout(() => window.close(), 1500);
     } catch (err) {
@@ -740,7 +795,6 @@ signInBtn.addEventListener('click', async () => {
     await window.MoodySheets.signIn();
     showForm();
     window.MoodyErrors.logSuccess('auth', 'Signed in to Google');
-    showSync('Connected to Google Sheets');
   } catch (err) {
     window.MoodyErrors.logError('auth', 'Sign-in failed', err.message);
     showSync('Sign-in failed');
@@ -751,19 +805,11 @@ initAuth();
 
 // --- Service Worker + Notifications ---
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js').then(async () => {
+  navigator.serviceWorker.register('./sw.js').then(() => {
     window.MoodyErrors.logSuccess('sw', 'Service worker registered');
-    if (!window.MoodyNotifications.isEnabled()) {
-      const granted = await window.MoodyNotifications.requestPermission();
-      if (granted) {
-        window.MoodyNotifications.enable();
-        window.MoodyErrors.logSuccess('notifications', 'Notifications enabled');
-      } else {
-        window.MoodyErrors.logError('notifications', 'Notification permission denied');
-      }
-    } else {
+    if (window.MoodyNotifications.isEnabled()) {
       window.MoodyErrors.logSuccess('notifications', 'Notifications already enabled', `Hour: ${window.MoodyNotifications.getNotifHour()}`);
+      window.MoodyNotifications.scheduleNightly();
     }
-    window.MoodyNotifications.scheduleNightly();
   });
 }

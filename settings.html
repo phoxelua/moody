@@ -160,6 +160,14 @@
       </div>
 
       <div class="setting-group">
+        <h2>About</h2>
+        <div class="setting-row">
+          <label>Version</label>
+          <span id="version" style="font-size: 0.85rem; color: var(--text-muted)">—</span>
+        </div>
+      </div>
+
+      <div class="setting-group">
         <div class="error-header-row">
           <h2>Log</h2>
           <button class="clear-btn" id="clear-btn">Clear</button>
@@ -168,6 +176,14 @@
       </div>
     </div>
     <script>
+      // Version — read from SW cache name
+      fetch('./sw.js')
+        .then((r) => r.text())
+        .then((text) => {
+          const match = text.match(/CACHE_NAME\s*=\s*'moody-v(\d+)'/);
+          if (match) document.getElementById('version').textContent = 'v' + match[1];
+        });
+
       // Notification hour
       const NOTIF_HOUR_KEY = 'moody_notif_hour';
       const notifSelect = document.getElementById('notif-hour');
