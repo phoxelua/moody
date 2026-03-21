@@ -1,5 +1,13 @@
-const NOTIF_HOUR = 23; // 11 PM
+const NOTIF_HOUR_KEY = 'moody_notif_hour';
 const NOTIF_KEY = 'moody_notif_enabled';
+
+function getNotifHour() {
+  return Number(localStorage.getItem(NOTIF_HOUR_KEY)) || 23;
+}
+
+function setNotifHour(hour) {
+  localStorage.setItem(NOTIF_HOUR_KEY, String(hour));
+}
 
 async function requestPermission() {
   if (!('Notification' in window)) return false;
@@ -18,7 +26,7 @@ function scheduleNightly() {
   nightlyInterval = setInterval(() => {
     const now = new Date();
     if (
-      now.getHours() === NOTIF_HOUR &&
+      now.getHours() === getNotifHour() &&
       now.getMinutes() === 0 &&
       localStorage.getItem(NOTIF_KEY) === 'true'
     ) {
@@ -59,4 +67,6 @@ window.MoodyNotifications = {
   showNotification,
   enable,
   isEnabled,
+  getNotifHour,
+  setNotifHour,
 };

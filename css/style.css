@@ -60,6 +60,7 @@ header h1 {
   animation: shimmer 4s ease infinite;
 }
 
+
 @keyframes shimmer {
   0%,
   100% {
@@ -75,12 +76,6 @@ header h1 {
   color: var(--text-muted);
   margin-top: 8px;
   letter-spacing: 0.02em;
-}
-
-.subtitle {
-  color: var(--text-muted);
-  font-size: 1rem;
-  margin-top: 4px;
 }
 
 /* Fields */
@@ -361,6 +356,7 @@ header h1 {
 
 /* Sign-in button */
 .sign-in-btn {
+  display: none;
   font-family: inherit;
   font-size: 0.85rem;
   font-weight: 500;
@@ -370,12 +366,47 @@ header h1 {
   background: var(--bg-card);
   color: var(--text);
   cursor: pointer;
-  margin-top: 12px;
+  margin: 12px auto 0;
   transition: all 0.15s ease;
 }
 
 .sign-in-btn:active {
   transform: scale(0.97);
+}
+
+/* Settings row */
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 24px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.settings-row select {
+  font-family: inherit;
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--bg-elevated);
+  background: var(--bg-card);
+  color: var(--text);
+  outline: none;
+}
+
+/* Bug link */
+.bug-link {
+  text-decoration: none;
+  font-size: 0.85rem;
+  opacity: 0.5;
+  margin-left: 16px;
+  transition: opacity 0.2s ease;
+}
+
+.bug-link:hover {
+  opacity: 1;
 }
 
 /* Sync status */

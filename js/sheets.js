@@ -1,8 +1,21 @@
 const CLIENT_ID =
   '17613324771-5glb8vdob9d6pmjo59dpkk7l7f1kh56e.apps.googleusercontent.com';
 const SCOPES = 'https://www.googleapis.com/auth/spreadsheets';
-const SHEET_ID_KEY = 'moody_sheet_id';
 const SHEETS_API = 'https://sheets.googleapis.com/v4/spreadsheets';
+const SHEET_ID = '1pZ_PZ0DPkhL8KwEuJUEtBILENeoaesLcLdCMC_ojKAI';
+const HEADERS = [
+  'Date',
+  'Happiness',
+  'Emotions',
+  'Social',
+  'Activities',
+  'Ate',
+  'Sleep',
+  'Grateful For',
+  'Quick Note',
+  'Weather',
+  'Steps',
+];
 
 let tokenClient;
 let accessToken = null;
@@ -45,130 +58,135 @@ async function getToken() {
   }
 }
 
-async function ensureSheet() {
-  let sheetId = localStorage.getItem(SHEET_ID_KEY);
-  if (sheetId) return sheetId;
-
+async function ensureEntriesTab() {
   const token = await getToken();
-  const response = await fetch(SHEETS_API, {
+  const response = await fetch(
+    `${SHEETS_API}/${SHEET_ID}/values/Entries!A1:K1`,
+    { headers: { Authorization: `Bearer ${token}` } },
+  );
+  if (response.ok) return;
+
+  // Create the Entries tab
+  await fetch(`${SHEETS_API}/${SHEET_ID}:batchUpdate`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      properties: { title: 'Moody Journal' },
-      sheets: [
-        {
-          properties: { title: 'Entries' },
-          data: [
-            {
-              startRow: 0,
-              startColumn: 0,
-              rowData: [
-                {
-                  values: [
-                    'Date',
-                    'Happiness',
-                    'Emotions',
-                    'Social',
-                    'Activities',
-                    'Ate',
-                    'Sleep',
-                    'Grateful For',
-                    'Quick Note',
-                    'Weather',
-                    'Steps',
-                  ].map((v) => ({ userEnteredValue: { stringValue: v } })),
-                },
-              ],
-            },
-          ],
-        },
-      ],
+      requests: [{ addSheet: { properties: { title: 'Entries' } } }],
     }),
   });
 
-  const data = await response.json();
-  sheetId = data.spreadsheetId;
-  localStorage.setItem(SHEET_ID_KEY, sheetId);
-  return sheetId;
-}
-
-async function appendRow(entry) {
-  const token = await getToken();
-  const sheetId = await ensureSheet();
-
-  const values = [
-    [
-      new Date(entry.date).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
-      }),
-      entry.happiness || '',
-      entry.emotions.join(', '),
-      entry.social.join(', '),
-      entry.activities.join(', '),
-      entry.ate || '',
-      entry.sleep || '',
-      entry.grateful,
-      entry.note,
-      entry.weather || '',
-      entry.steps || '',
-    ],
-  ];
-
-  const response = await fetch(
-    `${SHEETS_API}/${sheetId}/values/Entries!A:K:append?valueInputOption=USER_ENTERED`,
+  // Add headers
+  await fetch(
+    `${SHEETS_API}/${SHEET_ID}/values/Entries!A1:K1?valueInputOption=USER_ENTERED`,
     {
-      method: 'POST',
+      method: 'PUT',
       headers: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ values }),
+      body: JSON.stringify({ values: [HEADERS] }),
     },
   );
+}
+
+function formatRow(entry) {
+  return [
+    new Date(entry.date).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    }),
+    entry.happiness || '',
+    entry.emotions.join(', '),
+    entry.social.join(', '),
+    entry.activities.join(', '),
+    entry.ate || '',
+    entry.sleep || '',
+    entry.grateful,
+    entry.note,
+    entry.weather || '',
+    entry.steps || '',
+  ];
+}
+
+async function findTodayRow() {
+  const token = await getToken();
+  const response = await fetch(
+    `${SHEETS_API}/${SHEET_ID}/values/Entries!A:A`,
+    { headers: { Authorization: `Bearer ${token}` } },
+  );
+  if (!response.ok) return null;
+  const data = await response.json();
+  if (!data.values) return null;
+
+  const todayPrefix = new Date().toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
+
+  for (let i = 1; i < data.values.length; i++) {
+    if (data.values[i][0] && data.values[i][0].startsWith(todayPrefix)) {
+      return i + 1; // 1-indexed row number
+    }
+  }
+  return null;
+}
+
+async function saveRow(entry) {
+  const token = await getToken();
+  const values = [formatRow(entry)];
+  const existingRow = await findTodayRow();
+
+  let response;
+  if (existingRow) {
+    // Update existing row (last write wins)
+    response = await fetch(
+      `${SHEETS_API}/${SHEET_ID}/values/Entries!A${existingRow}:K${existingRow}?valueInputOption=USER_ENTERED`,
+      {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ values }),
+      },
+    );
+  } else {
+    // Append new row
+    response = await fetch(
+      `${SHEETS_API}/${SHEET_ID}/values/Entries!A:K:append?valueInputOption=USER_ENTERED`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ values }),
+      },
+    );
+  }
 
   if (!response.ok) {
-    // Queue for retry
     const queue = JSON.parse(localStorage.getItem('moody_sync_queue') || '[]');
     queue.push(entry);
     localStorage.setItem('moody_sync_queue', JSON.stringify(queue));
     throw new Error(`Sheets API error: ${response.status}`);
   }
 
-  // Flush any previously queued entries (non-recursive to avoid infinite loops)
+  // Flush any previously queued entries
   const queue = JSON.parse(localStorage.getItem('moody_sync_queue') || '[]');
   if (queue.length > 0) {
     localStorage.setItem('moody_sync_queue', '[]');
     for (const queued of queue) {
-      const queuedValues = [
-        [
-          new Date(queued.date).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-            hour: 'numeric',
-            minute: '2-digit',
-          }),
-          queued.happiness || '',
-          queued.emotions.join(', '),
-          queued.social.join(', '),
-          queued.activities.join(', '),
-          queued.ate || '',
-          queued.sleep || '',
-          queued.grateful,
-          queued.note,
-          queued.weather || '',
-          queued.steps || '',
-        ],
-      ];
+      const queuedValues = [formatRow(queued)];
       const queuedRes = await fetch(
-        `${SHEETS_API}/${sheetId}/values/Entries!A:K:append?valueInputOption=USER_ENTERED`,
+        `${SHEETS_API}/${SHEET_ID}/values/Entries!A:K:append?valueInputOption=USER_ENTERED`,
         {
           method: 'POST',
           headers: {
@@ -179,7 +197,6 @@ async function appendRow(entry) {
         },
       );
       if (!queuedRes.ok) {
-        // Re-queue remaining items and stop
         const remaining = queue.slice(queue.indexOf(queued));
         localStorage.setItem('moody_sync_queue', JSON.stringify(remaining));
         break;
@@ -189,12 +206,9 @@ async function appendRow(entry) {
 }
 
 async function readEntries() {
-  const sheetId = localStorage.getItem(SHEET_ID_KEY);
-  if (!sheetId) return [];
-
   const token = await getToken();
   const response = await fetch(
-    `${SHEETS_API}/${sheetId}/values/Entries!A2:K?majorDimension=ROWS`,
+    `${SHEETS_API}/${SHEET_ID}/values/Entries!A2:K?majorDimension=ROWS`,
     {
       headers: { Authorization: `Bearer ${token}` },
     },
@@ -221,7 +235,7 @@ async function readEntries() {
 async function signIn() {
   await requestToken('consent');
   localStorage.setItem('moody_connected', '1');
-  await ensureSheet();
+  await ensureEntriesTab();
 }
 
 function isSignedIn() {
@@ -237,7 +251,7 @@ window.MoodySheets = {
   signIn,
   isSignedIn,
   hasConnected,
-  appendRow,
+  saveRow,
   readEntries,
   getToken,
 };

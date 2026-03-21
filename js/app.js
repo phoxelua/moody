@@ -263,16 +263,6 @@ const dayOfYear = Math.floor(
 const quote = QUOTES[dayOfYear % QUOTES.length];
 document.getElementById('grateful').placeholder = `"${quote[0]}" — ${quote[1]}`;
 
-// --- Greeting ---
-const GREETINGS = [
-  'How was your day?',
-  'Time to reflect ✨',
-  'Take a moment for yourself',
-  'How are you tonight?',
-  'Ready to check in?',
-];
-const greeting = document.getElementById('greeting');
-greeting.textContent = GREETINGS[dayOfYear % GREETINGS.length];
 
 // --- Form validation ---
 function checkFormValidity() {
@@ -414,11 +404,12 @@ submitBtn.addEventListener('click', async () => {
   // Sync to Google Sheets in the background
   if (window.MoodySheets.isSignedIn()) {
     try {
-      await window.MoodySheets.appendRow(entry);
+      await window.MoodySheets.saveRow(entry);
       showSync('Synced to Google Sheets');
       // Auto-close after successful sync
       setTimeout(() => window.close(), 1500);
-    } catch {
+    } catch (err) {
+      window.MoodyErrors.logError('sheets', 'Sync failed', err.message);
       showSync('Saved locally (sync failed)');
     }
   }
@@ -491,7 +482,8 @@ headerMeta.textContent = dateStr;
 let currentWeather = null;
 
 if ('geolocation' in navigator) {
-  navigator.geolocation.getCurrentPosition(async (pos) => {
+  navigator.geolocation.getCurrentPosition(
+    async (pos) => {
     const lat = pos.coords.latitude;
     const lng = pos.coords.longitude;
     const inBayArea =
@@ -539,10 +531,15 @@ if ('geolocation' in navigator) {
         '';
 
       headerMeta.textContent = `${dateStr} · ${city ? city + ' · ' : ''}${info.emoji} ${temp}°F ${info.text}`;
-    } catch {
-      // Keep just the date if APIs fail
+    } catch (err) {
+      window.MoodyErrors.logError('weather', 'Weather/geo API failed', err.message);
     }
-  });
+    },
+    (err) => {
+      window.MoodyErrors.logError('geolocation', 'Location unavailable', err.message);
+    },
+    { timeout: 10000 },
+  );
 }
 
 function weatherCodeInfo(code) {
@@ -589,12 +586,20 @@ signInBtn.addEventListener('click', async () => {
     await window.MoodySheets.signIn();
     showForm();
     showSync('Connected to Google Sheets');
-  } catch {
+  } catch (err) {
+    window.MoodyErrors.logError('auth', 'Sign-in failed', err.message);
     showSync('Sign-in failed');
   }
 });
 
 initAuth();
+
+// --- Notification hour setting ---
+const notifHourSelect = document.getElementById('notif-hour');
+notifHourSelect.value = String(window.MoodyNotifications.getNotifHour());
+notifHourSelect.addEventListener('change', () => {
+  window.MoodyNotifications.setNotifHour(Number(notifHourSelect.value));
+});
 
 // --- Service Worker + Notifications ---
 if ('serviceWorker' in navigator) {

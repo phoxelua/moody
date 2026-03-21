@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#0f0f14" />
+    <title>Moody — Error Log</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <style>
+      .error-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 24px;
+      }
+      .error-header h1 {
+        font-size: 1.4rem;
+        background: none;
+        -webkit-text-fill-color: var(--text);
+        animation: none;
+      }
+      .back-link {
+        color: var(--accent);
+        text-decoration: none;
+        font-size: 0.85rem;
+      }
+      .clear-btn {
+        font-family: inherit;
+        font-size: 0.75rem;
+        padding: 6px 12px;
+        border: 1px solid var(--bg-elevated);
+        border-radius: 8px;
+        background: var(--bg-card);
+        color: var(--text-muted);
+        cursor: pointer;
+      }
+      .error-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .error-item {
+        background: var(--bg-card);
+        border-radius: var(--radius-sm);
+        padding: 12px 14px;
+        border-left: 3px solid var(--negative);
+      }
+      .error-time {
+        font-size: 0.7rem;
+        color: var(--text-muted);
+        margin-bottom: 4px;
+      }
+      .error-source {
+        font-size: 0.7rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        color: var(--negative);
+        margin-bottom: 4px;
+      }
+      .error-message {
+        font-size: 0.85rem;
+        color: var(--text);
+        word-break: break-word;
+      }
+      .error-detail {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        margin-top: 4px;
+        word-break: break-word;
+      }
+      .empty {
+        text-align: center;
+        color: var(--text-muted);
+        font-size: 0.9rem;
+        margin-top: 48px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <div class="error-header">
+        <a href="index.html" class="back-link">← Back</a>
+        <h1>🐛 Error Log</h1>
+        <button class="clear-btn" id="clear-btn">Clear</button>
+      </div>
+      <div class="error-list" id="error-list"></div>
+    </div>
+    <script>
+      const LOG_KEY = 'moody_error_log';
+      const list = document.getElementById('error-list');
+      const clearBtn = document.getElementById('clear-btn');
+
+      function render() {
+        const errors = JSON.parse(localStorage.getItem(LOG_KEY) || '[]');
+        if (errors.length === 0) {
+          list.innerHTML = '<p class="empty">No errors logged ✨</p>';
+          return;
+        }
+        list.innerHTML = errors
+          .slice()
+          .reverse()
+          .map(
+            (e) => `
+          <div class="error-item">
+            <div class="error-time">${new Date(e.time).toLocaleString()}</div>
+            <div class="error-source">${e.source}</div>
+            <div class="error-message">${e.message}</div>
+            ${e.detail ? `<div class="error-detail">${e.detail}</div>` : ''}
+          </div>`,
+          )
+          .join('');
+      }
+
+      clearBtn.addEventListener('click', () => {
+        localStorage.removeItem(LOG_KEY);
+        render();
+      });
+
+      render();
+    </script>
+  </body>
+</html>

@@ -22,8 +22,7 @@
       <header>
         <h1 id="title">Moody</h1>
         <p class="header-meta" id="header-meta"></p>
-        <p class="subtitle" id="greeting">How was your day?</p>
-        <button id="sign-in-btn" class="sign-in-btn" style="display: none">
+        <button id="sign-in-btn" class="sign-in-btn">
           Sign in with Google
         </button>
         <p id="sync-status" class="sync-status" style="display: none"></p>
@@ -335,9 +334,24 @@
 
         <!-- Submit -->
         <button id="submit-btn" class="submit-btn">✨ Save</button>
+
+        <!-- Settings -->
+        <div class="settings-row">
+          <label for="notif-hour">🔔 Remind me at</label>
+          <select id="notif-hour">
+            <option value="18">6 PM</option>
+            <option value="19">7 PM</option>
+            <option value="20">8 PM</option>
+            <option value="21">9 PM</option>
+            <option value="22">10 PM</option>
+            <option value="23" selected>11 PM</option>
+          </select>
+          <a href="errors.html" class="bug-link" title="Error log">🐛</a>
+        </div>
       </main>
     </div>
     <script src="https://accounts.google.com/gsi/client" async></script>
+    <script src="js/errors.js"></script>
     <script src="js/storage.js"></script>
     <script src="js/sheets.js"></script>
     <script src="js/notifications.js"></script>
