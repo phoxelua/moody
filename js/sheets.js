@@ -178,11 +178,14 @@ async function saveRow(entry) {
     );
   }
 
+  const responseBody = await response.text();
+  window.MoodyErrors.logSuccess('sheets', `Response ${response.status}`, responseBody.slice(0, 200));
+
   if (!response.ok) {
     const queue = JSON.parse(localStorage.getItem('moody_sync_queue') || '[]');
     queue.push(entry);
     localStorage.setItem('moody_sync_queue', JSON.stringify(queue));
-    throw new Error(`Sheets API error: ${response.status}`);
+    throw new Error(`Sheets API error: ${response.status} - ${responseBody.slice(0, 100)}`);
   }
 
   // Flush any previously queued entries
