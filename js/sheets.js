@@ -16,7 +16,6 @@ const HEADERS = [
   'Notes',
   'Location',
   'Weather',
-  'Steps',
 ];
 
 let tokenClient;
@@ -112,7 +111,6 @@ function formatRow(entry) {
     entry.grateful,
     entry.location || '',
     entry.weather || '',
-    entry.steps || '',
   ];
 }
 
@@ -239,7 +237,6 @@ async function readEntries() {
     grateful: row[7] || '',
     location: row[8] || '',
     weather: row[9] || '',
-    steps: row[10] || '',
   }));
 }
 

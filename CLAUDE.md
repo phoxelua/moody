@@ -7,7 +7,7 @@ Daily mood & health journal PWA. Hosted on GitHub Pages, added to iPhone home sc
 - **Vanilla JS** — no framework, no build step. Static files served directly.
 - **localStorage** — fast local cache for entries
 - **Google Sheets API** — durable backend (one row per check-in), accessed via OAuth
-- **Service worker** — offline caching + push notification scheduling
+- **Service worker** — offline caching
 - **Open-Meteo API** — weather data (no API key needed)
 - **Nominatim API** — reverse geocoding for city name
 
@@ -19,7 +19,6 @@ css/style.css       — Dark mode theme
 js/app.js           — Main logic: form, geolocation, weather, auto-selections
 js/sheets.js        — Google Sheets API + OAuth (write/read entries)
 js/storage.js       — localStorage persistence
-js/notifications.js — 11 PM notification scheduling
 sw.js               — Service worker (cache-first with network update)
 manifest.json       — PWA manifest
 ```
@@ -34,6 +33,6 @@ manifest.json       — PWA manifest
 
 - Google OAuth CLIENT_ID in sheets.js is safe to expose (identifier, not a secret)
 - Cache version in sw.js (`CACHE_NAME`) must be bumped on every code change
-- Google Sheets columns: Date, Happiness, Emotions, Social, Activities, Ate, Sleep, Grateful For, Quick Note, Weather, Steps (A:K)
+- Google Sheets columns: Date, Happiness, Emotions, Social, Activities, Ate, Sleep, Notes, Location, Weather (A:J)
 - Auto-selections: Work (weekdays), Home (always), Cook (weekdays except Fri, only if home), Travel (if not in Bay Area/Stockton)
 - Weather + geocode API calls are parallelized via Promise.all

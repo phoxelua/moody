@@ -1,4 +1,4 @@
-const CACHE_NAME = 'moody-v42';
+const CACHE_NAME = 'moody-v43';
 const ASSETS = [
   './',
   './index.html',
@@ -9,7 +9,6 @@ const ASSETS = [
   './js/app.js',
   './js/storage.js',
   './js/sheets.js',
-  './js/notifications.js',
   './manifest.json',
 ];
 
@@ -58,16 +57,3 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close();
-  event.waitUntil(
-    clients.matchAll({ type: 'window' }).then((windowClients) => {
-      for (const client of windowClients) {
-        if (client.url.includes('moody') && 'focus' in client) {
-          return client.focus();
-        }
-      }
-      return clients.openWindow('./');
-    }),
-  );
-});

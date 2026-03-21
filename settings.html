@@ -145,14 +145,6 @@
       </div>
 
       <div class="setting-group">
-        <h2>Notifications</h2>
-        <div class="setting-row">
-          <label for="notif-hour">🔔 Remind me at</label>
-          <input type="time" id="notif-time" value="23:00" style="font-family: inherit; font-size: 0.85rem; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--bg-elevated); background: var(--bg-elevated); color: var(--text); outline: none;" />
-        </div>
-      </div>
-
-      <div class="setting-group">
         <h2>Data</h2>
         <div class="setting-row">
           <label>Google Sheet</label>
@@ -199,17 +191,6 @@
         MoodyConfig.set('sheetId', sheetIdInput.value.trim());
         sheetIdInput.value = MoodyConfig.get('sheetId');
         sheetLink.href = `https://docs.google.com/spreadsheets/d/${sheetIdInput.value}/`;
-      });
-
-      // Notification time
-      const notifTime = document.getElementById('notif-time');
-      const savedHour = String(Number(MoodyConfig.get('notifHour'))).padStart(2, '0');
-      const savedMinute = String(Number(MoodyConfig.get('notifMinute'))).padStart(2, '0');
-      notifTime.value = `${savedHour}:${savedMinute}`;
-      notifTime.addEventListener('change', () => {
-        const [h, m] = notifTime.value.split(':');
-        MoodyConfig.set('notifHour', h);
-        MoodyConfig.set('notifMinute', m);
       });
 
       // Event log

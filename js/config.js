@@ -1,7 +1,5 @@
 window.MoodyConfig = {
   sheetId: '1y0MlPZNevWcPaPXVrKWzvhXOBWGU57ZO8QPh5W-WrTs',
-  notifHour: 23,
-  notifMinute: 0,
 
   get(key) {
     const stored = localStorage.getItem(`moody_${key}`);

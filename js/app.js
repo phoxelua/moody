@@ -518,17 +518,6 @@ submitBtn.addEventListener('click', async () => {
       await window.MoodySheets.saveRow(entry);
       window.MoodyErrors.logSuccess('sheets', 'Synced to Google Sheets');
       showSync('Synced to Google Sheets');
-      // Request notification permission on first save (needs user gesture on iOS)
-      if (!window.MoodyNotifications.isEnabled()) {
-        const granted = await window.MoodyNotifications.requestPermission();
-        if (granted) {
-          window.MoodyNotifications.enable();
-          window.MoodyNotifications.scheduleNightly();
-          window.MoodyErrors.logSuccess('notifications', 'Notifications enabled');
-        } else {
-          window.MoodyErrors.logError('notifications', 'Notification permission denied');
-        }
-      }
       // Auto-close after successful sync
       setTimeout(() => window.close(), 1500);
     } catch (err) {
@@ -817,13 +806,9 @@ signInBtn.addEventListener('click', async () => {
 
 initAuth();
 
-// --- Service Worker + Notifications ---
+// --- Service Worker ---
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./sw.js').then(() => {
     window.MoodyErrors.logSuccess('sw', 'Service worker registered');
-    if (window.MoodyNotifications.isEnabled()) {
-      window.MoodyErrors.logSuccess('notifications', 'Notifications already enabled', `Hour: ${window.MoodyNotifications.getNotifHour()}`);
-      window.MoodyNotifications.scheduleNightly();
-    }
   });
 }
