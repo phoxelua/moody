@@ -7,16 +7,16 @@
       content="width=device-width, initial-scale=1.0, viewport-fit=cover"
     />
     <meta name="theme-color" content="#0f0f14" />
-    <title>Moody — Error Log</title>
+    <title>Moody — Event Log</title>
     <link rel="stylesheet" href="css/style.css" />
     <style>
-      .error-header {
+      .log-header {
         display: flex;
         align-items: center;
         justify-content: space-between;
         margin-bottom: 24px;
       }
-      .error-header h1 {
+      .log-header h1 {
         font-size: 1.4rem;
         background: none;
         -webkit-text-fill-color: var(--text);
@@ -37,35 +37,41 @@
         color: var(--text-muted);
         cursor: pointer;
       }
-      .error-list {
+      .event-list {
         display: flex;
         flex-direction: column;
         gap: 12px;
       }
-      .error-item {
+      .event-item {
         background: var(--bg-card);
         border-radius: var(--radius-sm);
         padding: 12px 14px;
         border-left: 3px solid var(--negative);
       }
-      .error-time {
+      .event-item.success {
+        border-left-color: var(--positive);
+      }
+      .event-time {
         font-size: 0.7rem;
         color: var(--text-muted);
         margin-bottom: 4px;
       }
-      .error-source {
+      .event-source {
         font-size: 0.7rem;
         font-weight: 600;
         text-transform: uppercase;
         color: var(--negative);
         margin-bottom: 4px;
       }
-      .error-message {
+      .event-item.success .event-source {
+        color: var(--positive);
+      }
+      .event-message {
         font-size: 0.85rem;
         color: var(--text);
         word-break: break-word;
       }
-      .error-detail {
+      .event-detail {
         font-size: 0.75rem;
         color: var(--text-muted);
         margin-top: 4px;
@@ -81,34 +87,34 @@
   </head>
   <body>
     <div id="app">
-      <div class="error-header">
-        <a href="index.html" class="back-link">← Back</a>
-        <h1>🐛 Error Log</h1>
+      <div class="log-header">
+        <a href="index.html" class="back-link">&larr; Back</a>
+        <h1>Event Log</h1>
         <button class="clear-btn" id="clear-btn">Clear</button>
       </div>
-      <div class="error-list" id="error-list"></div>
+      <div class="event-list" id="event-list"></div>
     </div>
     <script>
-      const LOG_KEY = 'moody_error_log';
-      const list = document.getElementById('error-list');
+      const LOG_KEY = 'moody_event_log';
+      const list = document.getElementById('event-list');
       const clearBtn = document.getElementById('clear-btn');
 
       function render() {
-        const errors = JSON.parse(localStorage.getItem(LOG_KEY) || '[]');
-        if (errors.length === 0) {
-          list.innerHTML = '<p class="empty">No errors logged ✨</p>';
+        const events = JSON.parse(localStorage.getItem(LOG_KEY) || '[]');
+        if (events.length === 0) {
+          list.innerHTML = '<p class="empty">No events logged</p>';
           return;
         }
-        list.innerHTML = errors
+        list.innerHTML = events
           .slice()
           .reverse()
           .map(
             (e) => `
-          <div class="error-item">
-            <div class="error-time">${new Date(e.time).toLocaleString()}</div>
-            <div class="error-source">${e.source}</div>
-            <div class="error-message">${e.message}</div>
-            ${e.detail ? `<div class="error-detail">${e.detail}</div>` : ''}
+          <div class="event-item ${e.level === 'success' ? 'success' : ''}">
+            <div class="event-time">${new Date(e.time).toLocaleString()}</div>
+            <div class="event-source">${e.source}</div>
+            <div class="event-message">${e.message}</div>
+            ${e.detail ? `<div class="event-detail">${e.detail}</div>` : ''}
           </div>`,
           )
           .join('');

@@ -1,8 +1,8 @@
-const CACHE_NAME = 'moody-v22';
+const CACHE_NAME = 'moody-v25';
 const ASSETS = [
   './',
   './index.html',
-  './errors.html',
+  './settings.html',
   './css/style.css',
   './js/errors.js',
   './js/app.js',

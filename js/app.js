@@ -355,6 +355,30 @@ function getSingleValue(containerId) {
   return selected ? Number(selected.dataset.value) : null;
 }
 
+// --- Social section (collapsible) ---
+const socialSection = document.getElementById('social-section');
+const socialToggle = document.getElementById('social-toggle');
+const socialSummary = document.getElementById('social-summary');
+
+function updateSocialSummary() {
+  const selected = getSelectedChips('social-chips');
+  socialSummary.textContent =
+    selected.length > 0 ? selected.join(', ') : 'tap to edit';
+}
+
+socialToggle.addEventListener('click', () => {
+  socialSection.classList.toggle('expanded');
+});
+
+// Update summary when social chips change
+document
+  .querySelectorAll('#social-chips .chip, #social-expanded .chip')
+  .forEach((chip) => {
+    chip.addEventListener('click', () => {
+      setTimeout(updateSocialSummary, 0);
+    });
+  });
+
 function localISOString() {
   const now = new Date();
   const offset = -now.getTimezoneOffset();
@@ -391,7 +415,7 @@ submitBtn.addEventListener('click', async () => {
     ate: getSingleValue('ate'),
     sleep: getSingleValue('sleep'),
     grateful: document.getElementById('grateful').value.trim(),
-    note: document.getElementById('note').value.trim(),
+    note: '',
     weather: currentWeather || '',
   };
 
@@ -405,6 +429,7 @@ submitBtn.addEventListener('click', async () => {
   if (window.MoodySheets.isSignedIn()) {
     try {
       await window.MoodySheets.saveRow(entry);
+      window.MoodyErrors.logSuccess('sheets', 'Synced to Google Sheets');
       showSync('Synced to Google Sheets');
       // Auto-close after successful sync
       setTimeout(() => window.close(), 1500);
@@ -452,7 +477,6 @@ function resetForm() {
     input.classList.remove('visible');
   });
   document.getElementById('grateful').value = '';
-  document.getElementById('note').value = '';
 }
 
 // --- Auto-select defaults ---
@@ -515,13 +539,14 @@ function prefillForm(entry) {
     }
   }
 
-  // Text fields
-  if (entry.grateful) {
-    document.getElementById('grateful').value = entry.grateful;
+  // Text field (merged grateful + note)
+  const gratefulText = [entry.grateful, entry.note].filter(Boolean).join(' · ');
+  if (gratefulText) {
+    document.getElementById('grateful').value = gratefulText;
   }
-  if (entry.note) {
-    document.getElementById('note').value = entry.note;
-  }
+
+  // Update social summary
+  updateSocialSummary();
 
   checkFormValidity();
 }
@@ -529,6 +554,9 @@ function prefillForm(entry) {
 const todayEntry = window.MoodyStorage.getTodayEntry();
 if (todayEntry) {
   prefillForm(todayEntry);
+  window.MoodyErrors.logSuccess('prefill', 'Pre-filled from earlier entry');
+} else {
+  updateSocialSummary();
 }
 
 // --- Header meta (date + location + weather) ---
@@ -540,9 +568,15 @@ const dateStr = today.toLocaleDateString('en-US', {
 });
 headerMeta.textContent = dateStr;
 
+// Log app load
+window.MoodyErrors.logSuccess('app', 'App loaded', window.location.hostname);
+
 // Geolocation-based defaults (Travel, Cook, Weather, header)
 let currentWeather = null;
 
+if (!('geolocation' in navigator)) {
+  window.MoodyErrors.logError('geolocation', 'Geolocation not supported');
+}
 if ('geolocation' in navigator) {
   navigator.geolocation.getCurrentPosition(
     async (pos) => {
@@ -593,6 +627,7 @@ if ('geolocation' in navigator) {
         '';
 
       headerMeta.textContent = `${dateStr} · ${city ? city + ' · ' : ''}${info.emoji} ${temp}°F ${info.text}`;
+      window.MoodyErrors.logSuccess('location', 'Got location + weather', `${city || 'Unknown'} · ${temp}°F ${info.text}`);
     } catch (err) {
       window.MoodyErrors.logError('weather', 'Weather/geo API failed', err.message);
     }
@@ -600,7 +635,7 @@ if ('geolocation' in navigator) {
     (err) => {
       window.MoodyErrors.logError('geolocation', 'Location unavailable', err.message);
     },
-    { timeout: 10000 },
+    { enableHighAccuracy: true, timeout: 15000 },
   );
 }
 
@@ -638,8 +673,10 @@ function initAuth() {
 
   if (window.MoodySheets.hasConnected()) {
     showForm();
+    window.MoodyErrors.logSuccess('auth', 'Returning user, form shown');
   } else {
     signInBtn.style.display = 'block';
+    window.MoodyErrors.logSuccess('auth', 'New user, sign-in shown');
   }
 }
 
@@ -647,6 +684,7 @@ signInBtn.addEventListener('click', async () => {
   try {
     await window.MoodySheets.signIn();
     showForm();
+    window.MoodyErrors.logSuccess('auth', 'Signed in to Google');
     showSync('Connected to Google Sheets');
   } catch (err) {
     window.MoodyErrors.logError('auth', 'Sign-in failed', err.message);
@@ -656,21 +694,20 @@ signInBtn.addEventListener('click', async () => {
 
 initAuth();
 
-// --- Notification hour setting ---
-const notifHourSelect = document.getElementById('notif-hour');
-notifHourSelect.value = String(window.MoodyNotifications.getNotifHour());
-notifHourSelect.addEventListener('change', () => {
-  window.MoodyNotifications.setNotifHour(Number(notifHourSelect.value));
-});
-
 // --- Service Worker + Notifications ---
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./sw.js').then(async () => {
+    window.MoodyErrors.logSuccess('sw', 'Service worker registered');
     if (!window.MoodyNotifications.isEnabled()) {
       const granted = await window.MoodyNotifications.requestPermission();
       if (granted) {
         window.MoodyNotifications.enable();
+        window.MoodyErrors.logSuccess('notifications', 'Notifications enabled');
+      } else {
+        window.MoodyErrors.logError('notifications', 'Notification permission denied');
       }
+    } else {
+      window.MoodyErrors.logSuccess('notifications', 'Notifications already enabled', `Hour: ${window.MoodyNotifications.getNotifHour()}`);
     }
     window.MoodyNotifications.scheduleNightly();
   });

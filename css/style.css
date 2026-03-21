@@ -97,10 +97,10 @@ header h1 {
 .face-row {
   display: flex;
   justify-content: space-between;
-  gap: 6px;
+  gap: 4px;
   background: var(--bg-card);
   border-radius: var(--radius);
-  padding: 12px 8px;
+  padding: 8px 6px;
 }
 
 .face {
@@ -108,8 +108,8 @@ header h1 {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding: 10px 4px;
+  gap: 2px;
+  padding: 6px 4px;
   border: 2px solid transparent;
   border-radius: var(--radius-sm);
   background: transparent;
@@ -254,10 +254,10 @@ header h1 {
 .scale-row {
   display: flex;
   justify-content: space-between;
-  gap: 6px;
+  gap: 4px;
   background: var(--bg-card);
   border-radius: var(--radius);
-  padding: 12px 8px;
+  padding: 8px 6px;
 }
 
 .scale-btn {
@@ -265,8 +265,8 @@ header h1 {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding: 10px 4px;
+  gap: 2px;
+  padding: 6px 4px;
   border: 2px solid transparent;
   border-radius: var(--radius-sm);
   background: transparent;
@@ -374,39 +374,49 @@ header h1 {
   transform: scale(0.97);
 }
 
-/* Settings row */
-.settings-row {
+/* Collapsible section */
+.field--collapsible .collapsible-content {
+  display: none;
+}
+
+.field--collapsible.expanded .collapsible-content {
+  display: flex;
+}
+
+.field-label--toggle {
+  cursor: pointer;
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 8px;
-  margin-top: 24px;
-  font-size: 0.75rem;
-  color: var(--text-muted);
 }
 
-.settings-row select {
-  font-family: inherit;
-  font-size: 0.75rem;
-  padding: 4px 8px;
-  border-radius: 8px;
-  border: 1px solid var(--bg-elevated);
-  background: var(--bg-card);
-  color: var(--text);
-  outline: none;
+.toggle-summary {
+  font-size: 0.7rem;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--social);
+  opacity: 0.8;
 }
 
-/* Bug link */
-.bug-link {
+.field--collapsible.expanded .toggle-summary {
+  display: none;
+}
+
+/* Settings gear link */
+.settings-link {
+  display: block;
+  text-align: center;
   text-decoration: none;
-  font-size: 0.85rem;
-  opacity: 0.5;
-  margin-left: 16px;
+  font-size: 1rem;
+  opacity: 0.3;
+  margin-top: 24px;
+  padding: 8px;
   transition: opacity 0.2s ease;
 }
 
-.bug-link:hover {
-  opacity: 1;
+.settings-link:hover {
+  opacity: 0.6;
 }
 
 /* Sync status */

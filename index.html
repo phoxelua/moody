@@ -30,7 +30,6 @@
       <main id="checkin-form" style="display: none">
         <!-- Happiness -->
         <section class="field">
-          <label class="field-label">How are you feeling?</label>
           <div class="face-row" id="happiness">
             <button class="face" data-value="1">
               <span class="face-emoji">😢</span>
@@ -57,7 +56,6 @@
 
         <!-- Sleep -->
         <section class="field">
-          <label class="field-label">How'd you sleep?</label>
           <div class="scale-row" id="sleep">
             <button class="scale-btn" data-value="1">
               🥱<span>Terrible</span>
@@ -79,7 +77,6 @@
 
         <!-- Ate -->
         <section class="field">
-          <label class="field-label">How'd you eat?</label>
           <div class="scale-row" id="ate">
             <button class="scale-btn" data-value="1">
               🍕<span>Junk</span>
@@ -110,9 +107,6 @@
             <button class="chip chip--positive" data-value="Grateful">
               🙏 Grateful
             </button>
-            <button class="chip chip--positive" data-value="Excited">
-              🤩 Excited
-            </button>
             <button class="chip chip--positive" data-value="Motivated">
               💪 Motivated
             </button>
@@ -125,15 +119,18 @@
             <button class="chip chip--negative" data-value="Stressed">
               😤 Stressed
             </button>
-            <button class="chip chip--negative" data-value="Sad">😢 Sad</button>
-            <button class="chip chip--negative" data-value="Angry">
-              😠 Angry
-            </button>
             <button class="chip chip--more" data-section="emotion">
               + More
             </button>
           </div>
           <div class="chip-grid chip-grid--expanded" id="emotion-expanded">
+            <button class="chip chip--positive" data-value="Excited">
+              🤩 Excited
+            </button>
+            <button class="chip chip--negative" data-value="Sad">😢 Sad</button>
+            <button class="chip chip--negative" data-value="Angry">
+              😠 Angry
+            </button>
             <button class="chip chip--positive" data-value="Loved">
               🥰 Loved
             </button>
@@ -193,9 +190,11 @@
         </section>
 
         <!-- Social -->
-        <section class="field">
-          <label class="field-label">Social</label>
-          <div class="chip-grid" id="social-chips">
+        <section class="field field--collapsible" id="social-section">
+          <label class="field-label field-label--toggle" id="social-toggle">
+            Social <span class="toggle-summary" id="social-summary">Home</span>
+          </label>
+          <div class="chip-grid collapsible-content" id="social-chips">
             <button class="chip chip--social" data-value="Home">🏠 Home</button>
             <button class="chip chip--social" data-value="Date">💕 Date</button>
             <button class="chip chip--social" data-value="Friends">
@@ -310,9 +309,9 @@
           />
         </section>
 
-        <!-- Grateful for -->
+        <!-- Notes -->
         <section class="field">
-          <label class="field-label" for="grateful">🙏 Grateful for...</label>
+          <label class="field-label" for="grateful">✏️ Notes</label>
           <textarea
             id="grateful"
             class="text-input"
@@ -321,34 +320,10 @@
           ></textarea>
         </section>
 
-        <!-- Quick note -->
-        <section class="field">
-          <label class="field-label" for="note">📝 Quick note</label>
-          <textarea
-            id="note"
-            class="text-input"
-            placeholder="Anything on your mind?"
-            rows="2"
-          ></textarea>
-        </section>
-
         <!-- Submit -->
         <button id="submit-btn" class="submit-btn">✨ Save</button>
-
-        <!-- Settings -->
-        <div class="settings-row">
-          <label for="notif-hour">🔔 Remind me at</label>
-          <select id="notif-hour">
-            <option value="18">6 PM</option>
-            <option value="19">7 PM</option>
-            <option value="20">8 PM</option>
-            <option value="21">9 PM</option>
-            <option value="22">10 PM</option>
-            <option value="23" selected>11 PM</option>
-          </select>
-          <a href="errors.html" class="bug-link" title="Error log">🐛</a>
-        </div>
       </main>
+      <a href="settings.html" class="settings-link" title="Settings">⚙️</a>
     </div>
     <script src="https://accounts.google.com/gsi/client" async></script>
     <script src="js/errors.js"></script>

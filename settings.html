@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#0f0f14" />
+    <title>Moody — Settings</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <style>
+      .settings-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 32px;
+      }
+      .settings-header h1 {
+        font-size: 1.4rem;
+        background: none;
+        -webkit-text-fill-color: var(--text);
+        animation: none;
+      }
+      .back-link {
+        color: var(--accent);
+        text-decoration: none;
+        font-size: 0.85rem;
+      }
+      .setting-group {
+        margin-bottom: 32px;
+      }
+      .setting-group h2 {
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--text-muted);
+        margin-bottom: 12px;
+      }
+      .setting-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: var(--bg-card);
+        border-radius: var(--radius-sm);
+        padding: 14px 16px;
+      }
+      .setting-row label {
+        font-size: 0.9rem;
+        color: var(--text);
+      }
+      .setting-row select {
+        font-family: inherit;
+        font-size: 0.85rem;
+        padding: 6px 10px;
+        border-radius: 8px;
+        border: 1px solid var(--bg-elevated);
+        background: var(--bg-elevated);
+        color: var(--text);
+        outline: none;
+      }
+      .error-header-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+      }
+      .clear-btn {
+        font-family: inherit;
+        font-size: 0.7rem;
+        padding: 4px 10px;
+        border: 1px solid var(--bg-elevated);
+        border-radius: 8px;
+        background: var(--bg-card);
+        color: var(--text-muted);
+        cursor: pointer;
+      }
+      .error-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .error-item {
+        background: var(--bg-card);
+        border-radius: var(--radius-sm);
+        padding: 10px 14px;
+        border-left: 3px solid var(--negative);
+      }
+      .error-time {
+        font-size: 0.65rem;
+        color: var(--text-muted);
+        margin-bottom: 2px;
+      }
+      .error-source {
+        font-size: 0.65rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        color: var(--negative);
+        margin-bottom: 2px;
+      }
+      .error-message {
+        font-size: 0.8rem;
+        color: var(--text);
+        word-break: break-word;
+      }
+      .error-detail {
+        font-size: 0.7rem;
+        color: var(--text-muted);
+        margin-top: 2px;
+        word-break: break-word;
+      }
+      .empty {
+        text-align: center;
+        color: var(--text-muted);
+        font-size: 0.85rem;
+        margin-top: 24px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <div class="settings-header">
+        <a href="index.html" class="back-link">← Back</a>
+        <h1>⚙️ Settings</h1>
+        <span></span>
+      </div>
+
+      <div class="setting-group">
+        <h2>Notifications</h2>
+        <div class="setting-row">
+          <label for="notif-hour">🔔 Remind me at</label>
+          <select id="notif-hour">
+            <option value="18">6 PM</option>
+            <option value="19">7 PM</option>
+            <option value="20">8 PM</option>
+            <option value="21">9 PM</option>
+            <option value="22">10 PM</option>
+            <option value="23" selected>11 PM</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="setting-group">
+        <div class="error-header-row">
+          <h2>🐛 Error Log</h2>
+          <button class="clear-btn" id="clear-btn">Clear</button>
+        </div>
+        <div class="error-list" id="error-list"></div>
+      </div>
+    </div>
+    <script>
+      // Notification hour
+      const NOTIF_HOUR_KEY = 'moody_notif_hour';
+      const notifSelect = document.getElementById('notif-hour');
+      notifSelect.value =
+        String(Number(localStorage.getItem(NOTIF_HOUR_KEY)) || 23);
+      notifSelect.addEventListener('change', () => {
+        localStorage.setItem(NOTIF_HOUR_KEY, notifSelect.value);
+      });
+
+      // Error log
+      const LOG_KEY = 'moody_error_log';
+      const list = document.getElementById('error-list');
+      const clearBtn = document.getElementById('clear-btn');
+
+      function render() {
+        const errors = JSON.parse(localStorage.getItem(LOG_KEY) || '[]');
+        if (errors.length === 0) {
+          list.innerHTML = '<p class="empty">No errors ✨</p>';
+          return;
+        }
+        list.innerHTML = errors
+          .slice()
+          .reverse()
+          .map(
+            (e) => `
+          <div class="error-item">
+            <div class="error-time">${new Date(e.time).toLocaleString()}</div>
+            <div class="error-source">${e.source}</div>
+            <div class="error-message">${e.message}</div>
+            ${e.detail ? `<div class="error-detail">${e.detail}</div>` : ''}
+          </div>`,
+          )
+          .join('');
+      }
+
+      clearBtn.addEventListener('click', () => {
+        localStorage.removeItem(LOG_KEY);
+        render();
+      });
+
+      render();
+    </script>
+  </body>
+</html>
