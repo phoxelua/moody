@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#0f0f14" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <title>Moody</title>
+    <link rel="manifest" href="manifest.json" />
+    <link rel="apple-touch-icon" href="icons/icon-192.png" />
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <div id="app">
+      <header>
+        <h1 id="title">Moody</h1>
+        <p class="header-meta" id="header-meta"></p>
+        <p class="subtitle" id="greeting">How was your day?</p>
+        <button id="sign-in-btn" class="sign-in-btn" style="display: none">
+          Sign in with Google
+        </button>
+        <p id="sync-status" class="sync-status" style="display: none"></p>
+      </header>
+      <main id="checkin-form">
+        <!-- Happiness -->
+        <section class="field">
+          <label class="field-label">How are you feeling?</label>
+          <div class="face-row" id="happiness">
+            <button class="face" data-value="1">
+              <span class="face-emoji">😢</span>
+              <span class="face-label">Awful</span>
+            </button>
+            <button class="face" data-value="2">
+              <span class="face-emoji">😕</span>
+              <span class="face-label">Bad</span>
+            </button>
+            <button class="face" data-value="3">
+              <span class="face-emoji">😐</span>
+              <span class="face-label">Meh</span>
+            </button>
+            <button class="face" data-value="4">
+              <span class="face-emoji">🙂</span>
+              <span class="face-label">Good</span>
+            </button>
+            <button class="face" data-value="5">
+              <span class="face-emoji">😄</span>
+              <span class="face-label">Great</span>
+            </button>
+          </div>
+        </section>
+
+        <!-- Sleep -->
+        <section class="field">
+          <label class="field-label">How'd you sleep?</label>
+          <div class="scale-row" id="sleep">
+            <button class="scale-btn" data-value="1">
+              🥱<span>Terrible</span>
+            </button>
+            <button class="scale-btn" data-value="2">
+              😪<span>Poor</span>
+            </button>
+            <button class="scale-btn" data-value="3">
+              🛏️<span>Okay</span>
+            </button>
+            <button class="scale-btn" data-value="4">
+              😴<span>Good</span>
+            </button>
+            <button class="scale-btn" data-value="5">
+              💤<span>Amazing</span>
+            </button>
+          </div>
+        </section>
+
+        <!-- Ate -->
+        <section class="field">
+          <label class="field-label">How'd you eat?</label>
+          <div class="scale-row" id="ate">
+            <button class="scale-btn" data-value="1">
+              🍕<span>Junk</span>
+            </button>
+            <button class="scale-btn" data-value="2">🍜<span>Meh</span></button>
+            <button class="scale-btn" data-value="3">
+              🍽️<span>Okay</span>
+            </button>
+            <button class="scale-btn" data-value="4">
+              🥑<span>Good</span>
+            </button>
+            <button class="scale-btn" data-value="5">
+              🥗<span>Great</span>
+            </button>
+          </div>
+        </section>
+
+        <!-- Emotions -->
+        <section class="field">
+          <label class="field-label">Emotions</label>
+          <div class="chip-grid" id="emotion-chips">
+            <button class="chip chip--positive" data-value="Happy">
+              😊 Happy
+            </button>
+            <button class="chip chip--positive" data-value="Calm">
+              😌 Calm
+            </button>
+            <button class="chip chip--positive" data-value="Grateful">
+              🙏 Grateful
+            </button>
+            <button class="chip chip--positive" data-value="Excited">
+              🤩 Excited
+            </button>
+            <button class="chip chip--positive" data-value="Motivated">
+              💪 Motivated
+            </button>
+            <button class="chip chip--neutral" data-value="Tired">
+              😴 Tired
+            </button>
+            <button class="chip chip--negative" data-value="Anxious">
+              😰 Anxious
+            </button>
+            <button class="chip chip--negative" data-value="Stressed">
+              😤 Stressed
+            </button>
+            <button class="chip chip--negative" data-value="Sad">😢 Sad</button>
+            <button class="chip chip--negative" data-value="Angry">
+              😠 Angry
+            </button>
+            <button class="chip chip--more" data-section="emotion">
+              + More
+            </button>
+          </div>
+          <div class="chip-grid chip-grid--expanded" id="emotion-expanded">
+            <button class="chip chip--positive" data-value="Loved">
+              🥰 Loved
+            </button>
+            <button class="chip chip--positive" data-value="Proud">
+              😤 Proud
+            </button>
+            <button class="chip chip--positive" data-value="Hopeful">
+              🌟 Hopeful
+            </button>
+            <button class="chip chip--positive" data-value="Confident">
+              😎 Confident
+            </button>
+            <button class="chip chip--positive" data-value="Locked In">
+              🔒 Locked In
+            </button>
+            <button class="chip chip--positive" data-value="Grinding">
+              🏗️ Grinding
+            </button>
+            <button class="chip chip--positive" data-value="Playful">
+              😜 Playful
+            </button>
+            <button class="chip chip--positive" data-value="Energized">
+              ⚡ Energized
+            </button>
+            <button class="chip chip--positive" data-value="Adventurous">
+              🧭 Adventurous
+            </button>
+            <button class="chip chip--neutral" data-value="Meh">😑 Meh</button>
+            <button class="chip chip--neutral" data-value="Nostalgic">
+              🥲 Nostalgic
+            </button>
+            <button class="chip chip--neutral" data-value="Restless">
+              😬 Restless
+            </button>
+            <button class="chip chip--negative" data-value="Lonely">
+              🥺 Lonely
+            </button>
+            <button class="chip chip--negative" data-value="Frustrated">
+              😖 Frustrated
+            </button>
+            <button class="chip chip--negative" data-value="Overwhelmed">
+              🤯 Overwhelmed
+            </button>
+            <button class="chip chip--negative" data-value="Jealous">
+              😒 Jealous
+            </button>
+            <button class="chip chip--negative" data-value="Numb">
+              😶 Numb
+            </button>
+          </div>
+          <input
+            type="text"
+            class="chip-custom"
+            data-section="emotion-chips"
+            placeholder="Other..."
+          />
+        </section>
+
+        <!-- Social -->
+        <section class="field">
+          <label class="field-label">Social</label>
+          <div class="chip-grid" id="social-chips">
+            <button class="chip chip--social" data-value="Home">🏠 Home</button>
+            <button class="chip chip--social" data-value="Date">💕 Date</button>
+            <button class="chip chip--social" data-value="Friends">
+              👯 Friends
+            </button>
+            <button class="chip chip--social" data-value="Party">
+              🎉 Party
+            </button>
+            <button class="chip chip--social" data-value="Solo">🧘 Solo</button>
+            <button class="chip chip--more" data-section="social">
+              + More
+            </button>
+          </div>
+          <div class="chip-grid chip-grid--expanded" id="social-expanded">
+            <button class="chip chip--social" data-value="Family">
+              👨‍👩‍👧 Family
+            </button>
+            <button class="chip chip--social" data-value="Coworkers">
+              💼 Coworkers
+            </button>
+            <button class="chip chip--social" data-value="Neighbors">
+              🏘️ Neighbors
+            </button>
+            <button class="chip chip--social" data-value="Strangers">
+              👋 Strangers
+            </button>
+            <button class="chip chip--social" data-value="Online">
+              💬 Online
+            </button>
+            <button class="chip chip--social" data-value="Mentor">
+              🎓 Mentor
+            </button>
+          </div>
+          <input
+            type="text"
+            class="chip-custom"
+            data-section="social-chips"
+            placeholder="Other..."
+          />
+        </section>
+
+        <!-- Activities -->
+        <section class="field">
+          <label class="field-label">Activities</label>
+          <div class="chip-grid" id="activity-chips">
+            <button class="chip chip--activity" data-value="Work">
+              💼 Work
+            </button>
+            <button class="chip chip--activity" data-value="Cook">
+              🍳 Cook
+            </button>
+            <button class="chip chip--activity" data-value="Lift">
+              🏋️ Lift
+            </button>
+            <button class="chip chip--activity" data-value="Basketball">
+              🏀 Basketball
+            </button>
+            <button class="chip chip--activity" data-value="Walk">
+              🚶 Walk
+            </button>
+            <button class="chip chip--activity" data-value="Box">🥊 Box</button>
+            <button class="chip chip--more" data-section="activity">
+              + More
+            </button>
+          </div>
+          <div class="chip-grid chip-grid--expanded" id="activity-expanded">
+            <button class="chip chip--activity" data-value="Run">🏃 Run</button>
+            <button class="chip chip--activity" data-value="Swim">
+              🏊 Swim
+            </button>
+            <button class="chip chip--activity" data-value="Bike">
+              🚴 Bike
+            </button>
+            <button class="chip chip--activity" data-value="Hike">
+              🥾 Hike
+            </button>
+            <button class="chip chip--activity" data-value="Sex">🔥 Sex</button>
+            <button class="chip chip--activity" data-value="Snack">
+              🍿 Snack
+            </button>
+            <button class="chip chip--activity" data-value="Clean">
+              🧹 Clean
+            </button>
+            <button class="chip chip--activity" data-value="Shop">
+              🛍️ Shop
+            </button>
+            <button class="chip chip--activity" data-value="Read">
+              📚 Read
+            </button>
+            <button class="chip chip--activity" data-value="Meditate">
+              🧠 Meditate
+            </button>
+            <button class="chip chip--activity" data-value="Game">
+              🎮 Game
+            </button>
+            <button class="chip chip--activity" data-value="Music">
+              🎵 Music
+            </button>
+            <button class="chip chip--activity" data-value="Code">
+              💻 Code
+            </button>
+            <button class="chip chip--activity" data-value="Travel">
+              ✈️ Travel
+            </button>
+            <button class="chip chip--activity" data-value="Art">🎨 Art</button>
+          </div>
+          <input
+            type="text"
+            class="chip-custom"
+            data-section="activity-chips"
+            placeholder="Other..."
+          />
+        </section>
+
+        <!-- Grateful for -->
+        <section class="field">
+          <label class="field-label" for="grateful">🙏 Grateful for...</label>
+          <textarea
+            id="grateful"
+            class="text-input"
+            placeholder="One good thing about today"
+            rows="2"
+          ></textarea>
+        </section>
+
+        <!-- Quick note -->
+        <section class="field">
+          <label class="field-label" for="note">📝 Quick note</label>
+          <textarea
+            id="note"
+            class="text-input"
+            placeholder="Anything on your mind?"
+            rows="2"
+          ></textarea>
+        </section>
+
+        <!-- Submit -->
+        <button id="submit-btn" class="submit-btn">✨ Save</button>
+      </main>
+    </div>
+    <script src="https://accounts.google.com/gsi/client" async></script>
+    <script src="js/storage.js"></script>
+    <script src="js/sheets.js"></script>
+    <script src="js/notifications.js"></script>
+    <script src="js/app.js"></script>
+  </body>
+</html>

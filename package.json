@@ -1,0 +1,21 @@
+{
+  "name": "moody",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "lint": "eslint js/",
+    "format": "prettier --write '**/*.{js,css,html,json}'",
+    "format:check": "prettier --check '**/*.{js,css,html,json}'"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.1.0",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.8.1"
+  }
+}
