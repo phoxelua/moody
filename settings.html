@@ -153,18 +153,22 @@
       </div>
 
       <div class="setting-group">
+        <h2>Data</h2>
+        <div class="setting-row">
+          <label>Google Sheet</label>
+          <a id="sheet-link" href="#" target="_blank" style="font-size: 0.85rem; color: var(--accent); text-decoration: none;">Open ↗</a>
+        </div>
+        <div class="setting-row" style="margin-top: 1px">
+          <label for="sheet-id">Sheet ID</label>
+          <input type="text" id="sheet-id" style="font-family: monospace; font-size: 0.7rem; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--bg-elevated); background: var(--bg-elevated); color: var(--text); outline: none; width: 140px; text-align: right;" />
+        </div>
+      </div>
+
+      <div class="setting-group">
         <h2>About</h2>
         <div class="setting-row">
           <label>Version</label>
           <span id="version" style="font-size: 0.85rem; color: var(--text-muted)">—</span>
-        </div>
-        <div class="setting-row" style="margin-top: 1px">
-          <label>Updated</label>
-          <span id="updated-at" style="font-size: 0.85rem; color: var(--text-muted)">—</span>
-        </div>
-        <div class="setting-row" style="margin-top: 1px">
-          <label>Commit</label>
-          <span id="commit-hash" style="font-size: 0.85rem; color: var(--text-muted); font-family: monospace; font-size: 0.75rem">—</span>
         </div>
       </div>
 
@@ -176,6 +180,7 @@
         <div class="error-list" id="error-list"></div>
       </div>
     </div>
+    <script src="js/config.js"></script>
     <script>
       // Version — read from SW cache name
       fetch('./sw.js')
@@ -185,26 +190,26 @@
           if (match) document.getElementById('version').textContent = 'v' + match[1];
         });
 
-      // Build info
-      fetch('./build-info.json')
-        .then((r) => r.json())
-        .then((info) => {
-          document.getElementById('commit-hash').textContent = info.commit;
-          const d = new Date(info.updatedAt);
-          document.getElementById('updated-at').textContent = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
-        });
+      // Sheet ID
+      const sheetIdInput = document.getElementById('sheet-id');
+      const sheetLink = document.getElementById('sheet-link');
+      sheetIdInput.value = MoodyConfig.get('sheetId');
+      sheetLink.href = `https://docs.google.com/spreadsheets/d/${sheetIdInput.value}/`;
+      sheetIdInput.addEventListener('change', () => {
+        MoodyConfig.set('sheetId', sheetIdInput.value.trim());
+        sheetIdInput.value = MoodyConfig.get('sheetId');
+        sheetLink.href = `https://docs.google.com/spreadsheets/d/${sheetIdInput.value}/`;
+      });
 
       // Notification time
-      const NOTIF_HOUR_KEY = 'moody_notif_hour';
-      const NOTIF_MINUTE_KEY = 'moody_notif_minute';
       const notifTime = document.getElementById('notif-time');
-      const savedHour = String(Number(localStorage.getItem(NOTIF_HOUR_KEY)) || 23).padStart(2, '0');
-      const savedMinute = String(Number(localStorage.getItem(NOTIF_MINUTE_KEY)) || 0).padStart(2, '0');
+      const savedHour = String(Number(MoodyConfig.get('notifHour'))).padStart(2, '0');
+      const savedMinute = String(Number(MoodyConfig.get('notifMinute'))).padStart(2, '0');
       notifTime.value = `${savedHour}:${savedMinute}`;
       notifTime.addEventListener('change', () => {
         const [h, m] = notifTime.value.split(':');
-        localStorage.setItem(NOTIF_HOUR_KEY, h);
-        localStorage.setItem(NOTIF_MINUTE_KEY, m);
+        MoodyConfig.set('notifHour', h);
+        MoodyConfig.set('notifMinute', m);
       });
 
       // Event log

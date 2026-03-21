@@ -1,13 +1,11 @@
-const NOTIF_HOUR_KEY = 'moody_notif_hour';
-const NOTIF_MINUTE_KEY = 'moody_notif_minute';
 const NOTIF_KEY = 'moody_notif_enabled';
 
 function getNotifHour() {
-  return Number(localStorage.getItem(NOTIF_HOUR_KEY)) || 23;
+  return Number(window.MoodyConfig.get('notifHour'));
 }
 
 function getNotifMinute() {
-  return Number(localStorage.getItem(NOTIF_MINUTE_KEY)) || 0;
+  return Number(window.MoodyConfig.get('notifMinute'));
 }
 
 async function requestPermission() {

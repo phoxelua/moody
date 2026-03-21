@@ -501,7 +501,7 @@ submitBtn.addEventListener('click', async () => {
     ate: getSingleValue('ate'),
     sleep: getSingleValue('sleep'),
     grateful: document.getElementById('grateful').value.trim(),
-    note: '',
+    location: currentLocation || '',
     weather: currentWeather || '',
   };
 
@@ -637,8 +637,8 @@ function prefillForm(entry) {
     }
   }
 
-  // Text field (merged grateful + note)
-  const gratefulText = [entry.grateful, entry.note].filter(Boolean).join(' · ');
+  // Text field
+  const gratefulText = entry.grateful || '';
   if (gratefulText) {
     document.getElementById('grateful').value = gratefulText;
   }
@@ -676,6 +676,7 @@ window.MoodyErrors.logSuccess('app', 'App loaded', window.location.hostname);
 
 // Geolocation-based defaults (Travel, Cook, Weather, header)
 let currentWeather = null;
+let currentLocation = null;
 
 // SF fallback coordinates
 const SF_LAT = 37.7749;
@@ -705,6 +706,7 @@ async function fetchWeatherAndLocation(lat, lng, isFallback) {
       '';
 
     const locationNote = isFallback ? ' (approx)' : '';
+    currentLocation = city ? city + locationNote : '';
     headerMeta.textContent = `${dateStr} · ${city ? city + locationNote + ' · ' : ''}${info.emoji} ${temp}°F ${info.text}`;
     window.MoodyErrors.logSuccess('location', isFallback ? 'Fallback to SF' : 'Got location + weather', `${city || 'Unknown'} · ${temp}°F ${info.text}`);
   } catch (err) {

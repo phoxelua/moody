@@ -2,7 +2,9 @@ const CLIENT_ID =
   '17613324771-5glb8vdob9d6pmjo59dpkk7l7f1kh56e.apps.googleusercontent.com';
 const SCOPES = 'https://www.googleapis.com/auth/spreadsheets';
 const SHEETS_API = 'https://sheets.googleapis.com/v4/spreadsheets';
-const SHEET_ID = '1y0MlPZNevWcPaPXVrKWzvhXOBWGU57ZO8QPh5W-WrTs';
+function getSheetId() {
+  return window.MoodyConfig.get('sheetId');
+}
 const HEADERS = [
   'Date',
   'Happiness',
@@ -11,8 +13,8 @@ const HEADERS = [
   'Activities',
   'Ate',
   'Sleep',
-  'Grateful For',
-  'Quick Note',
+  'Notes',
+  'Location',
   'Weather',
   'Steps',
 ];
@@ -61,13 +63,13 @@ async function getToken() {
 async function ensureEntriesTab() {
   const token = await getToken();
   const response = await fetch(
-    `${SHEETS_API}/${SHEET_ID}/values/Entries!A1:K1`,
+    `${SHEETS_API}/${getSheetId()}/values/Entries!A1:K1`,
     { headers: { Authorization: `Bearer ${token}` } },
   );
   if (response.ok) return;
 
   // Create the Entries tab
-  await fetch(`${SHEETS_API}/${SHEET_ID}:batchUpdate`, {
+  await fetch(`${SHEETS_API}/${getSheetId()}:batchUpdate`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${token}`,
@@ -80,7 +82,7 @@ async function ensureEntriesTab() {
 
   // Add headers
   await fetch(
-    `${SHEETS_API}/${SHEET_ID}/values/Entries!A1:K1?valueInputOption=USER_ENTERED`,
+    `${SHEETS_API}/${getSheetId()}/values/Entries!A1:K1?valueInputOption=USER_ENTERED`,
     {
       method: 'PUT',
       headers: {
@@ -108,7 +110,7 @@ function formatRow(entry) {
     entry.ate || '',
     entry.sleep || '',
     entry.grateful,
-    entry.note,
+    entry.location || '',
     entry.weather || '',
     entry.steps || '',
   ];
@@ -117,7 +119,7 @@ function formatRow(entry) {
 async function findTodayRow() {
   const token = await getToken();
   const response = await fetch(
-    `${SHEETS_API}/${SHEET_ID}/values/Entries!A:A`,
+    `${SHEETS_API}/${getSheetId()}/values/Entries!A:A`,
     { headers: { Authorization: `Bearer ${token}` } },
   );
   if (!response.ok) return null;
@@ -152,7 +154,7 @@ async function saveRow(entry) {
     // Update existing row (last write wins)
     window.MoodyErrors.logSuccess('sheets', `Updating row ${existingRow}`, JSON.stringify(values[0].slice(0, 5)));
     response = await fetch(
-      `${SHEETS_API}/${SHEET_ID}/values/Entries!A${existingRow}:K${existingRow}?valueInputOption=USER_ENTERED`,
+      `${SHEETS_API}/${getSheetId()}/values/Entries!A${existingRow}:K${existingRow}?valueInputOption=USER_ENTERED`,
       {
         method: 'PUT',
         headers: {
@@ -166,7 +168,7 @@ async function saveRow(entry) {
     // Append new row
     window.MoodyErrors.logSuccess('sheets', 'Appending new row', JSON.stringify(values[0].slice(0, 5)));
     response = await fetch(
-      `${SHEETS_API}/${SHEET_ID}/values/Entries!A:K:append?valueInputOption=USER_ENTERED`,
+      `${SHEETS_API}/${getSheetId()}/values/Entries!A:K:append?valueInputOption=USER_ENTERED`,
       {
         method: 'POST',
         headers: {
@@ -195,7 +197,7 @@ async function saveRow(entry) {
     for (const queued of queue) {
       const queuedValues = [formatRow(queued)];
       const queuedRes = await fetch(
-        `${SHEETS_API}/${SHEET_ID}/values/Entries!A:K:append?valueInputOption=USER_ENTERED`,
+        `${SHEETS_API}/${getSheetId()}/values/Entries!A:K:append?valueInputOption=USER_ENTERED`,
         {
           method: 'POST',
           headers: {
@@ -217,7 +219,7 @@ async function saveRow(entry) {
 async function readEntries() {
   const token = await getToken();
   const response = await fetch(
-    `${SHEETS_API}/${SHEET_ID}/values/Entries!A2:K?majorDimension=ROWS`,
+    `${SHEETS_API}/${getSheetId()}/values/Entries!A2:K?majorDimension=ROWS`,
     {
       headers: { Authorization: `Bearer ${token}` },
     },
@@ -235,7 +237,7 @@ async function readEntries() {
     ate: Number(row[5]) || null,
     sleep: Number(row[6]) || null,
     grateful: row[7] || '',
-    note: row[8] || '',
+    location: row[8] || '',
     weather: row[9] || '',
     steps: row[10] || '',
   }));
