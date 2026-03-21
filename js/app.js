@@ -264,6 +264,30 @@ const quote = QUOTES[dayOfYear % QUOTES.length];
 document.getElementById('grateful').placeholder = `"${quote[0]}" — ${quote[1]}`;
 
 
+// --- Form state persistence (survives navigation, not new sessions) ---
+const FORM_STATE_KEY = 'moody_form_state';
+
+function saveFormState() {
+  const state = {
+    happiness: getSingleValue('happiness'),
+    sleep: getSingleValue('sleep'),
+    ate: getSingleValue('ate'),
+    emotions: getSelectedChips('emotion-chips'),
+    social: getSelectedChips('social-chips'),
+    activities: getSelectedChips('activity-chips'),
+    grateful: document.getElementById('grateful').value,
+  };
+  sessionStorage.setItem(FORM_STATE_KEY, JSON.stringify(state));
+}
+
+function restoreFormState() {
+  const raw = sessionStorage.getItem(FORM_STATE_KEY);
+  if (!raw) return false;
+  const state = JSON.parse(raw);
+  prefillForm(state);
+  return true;
+}
+
 // --- Form validation ---
 function checkFormValidity() {
   const valid =
@@ -286,6 +310,7 @@ document.querySelectorAll('.face-row').forEach((row) => {
       .forEach((f) => f.classList.remove('selected'));
     face.classList.add('selected');
     checkFormValidity();
+    saveFormState();
   });
 });
 
@@ -299,6 +324,7 @@ document.querySelectorAll('.scale-row').forEach((row) => {
       .forEach((b) => b.classList.remove('selected'));
     btn.classList.add('selected');
     checkFormValidity();
+    saveFormState();
   });
 });
 
@@ -324,6 +350,7 @@ document.querySelectorAll('.chip-grid').forEach((grid) => {
 
     chip.classList.toggle('selected');
     checkFormValidity();
+    saveFormState();
   });
 });
 
@@ -379,6 +406,9 @@ document
     });
   });
 
+// Save form state on text input
+document.getElementById('grateful').addEventListener('input', saveFormState);
+
 function localISOString() {
   const now = new Date();
   const offset = -now.getTimezoneOffset();
@@ -420,6 +450,7 @@ submitBtn.addEventListener('click', async () => {
   };
 
   window.MoodyStorage.saveEntry(entry);
+  sessionStorage.removeItem(FORM_STATE_KEY);
 
   submitBtn.textContent = '✅ Saved!';
   submitBtn.classList.add('success');
@@ -551,12 +582,17 @@ function prefillForm(entry) {
   checkFormValidity();
 }
 
-const todayEntry = window.MoodyStorage.getTodayEntry();
-if (todayEntry) {
-  prefillForm(todayEntry);
-  window.MoodyErrors.logSuccess('prefill', 'Pre-filled from earlier entry');
+// Restore: session state > today's saved entry > defaults
+if (restoreFormState()) {
+  window.MoodyErrors.logSuccess('prefill', 'Restored in-progress form');
 } else {
-  updateSocialSummary();
+  const todayEntry = window.MoodyStorage.getTodayEntry();
+  if (todayEntry) {
+    prefillForm(todayEntry);
+    window.MoodyErrors.logSuccess('prefill', 'Pre-filled from earlier entry');
+  } else {
+    updateSocialSummary();
+  }
 }
 
 // --- Header meta (date + location + weather) ---
