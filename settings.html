@@ -86,11 +86,20 @@
         border-radius: var(--radius-sm);
         padding: 10px 14px;
         border-left: 3px solid var(--negative);
+        cursor: pointer;
+        user-select: none;
+      }
+      .error-item.success {
+        border-left-color: var(--positive);
       }
       .error-time {
         font-size: 0.65rem;
         color: var(--text-muted);
         margin-bottom: 2px;
+        display: none;
+      }
+      .error-item.expanded .error-time {
+        display: block;
       }
       .error-source {
         font-size: 0.65rem;
@@ -98,6 +107,15 @@
         text-transform: uppercase;
         color: var(--negative);
         margin-bottom: 2px;
+      }
+      .error-item.success .error-source {
+        color: var(--positive);
+      }
+      .error-detail {
+        display: none;
+      }
+      .error-item.expanded .error-detail {
+        display: block;
       }
       .error-message {
         font-size: 0.8rem;
@@ -143,7 +161,7 @@
 
       <div class="setting-group">
         <div class="error-header-row">
-          <h2>🐛 Error Log</h2>
+          <h2>Log</h2>
           <button class="clear-btn" id="clear-btn">Clear</button>
         </div>
         <div class="error-list" id="error-list"></div>
@@ -159,23 +177,23 @@
         localStorage.setItem(NOTIF_HOUR_KEY, notifSelect.value);
       });
 
-      // Error log
-      const LOG_KEY = 'moody_error_log';
+      // Event log
+      const LOG_KEY = 'moody_event_log';
       const list = document.getElementById('error-list');
       const clearBtn = document.getElementById('clear-btn');
 
       function render() {
-        const errors = JSON.parse(localStorage.getItem(LOG_KEY) || '[]');
-        if (errors.length === 0) {
-          list.innerHTML = '<p class="empty">No errors ✨</p>';
+        const events = JSON.parse(localStorage.getItem(LOG_KEY) || '[]');
+        if (events.length === 0) {
+          list.innerHTML = '<p class="empty">No events logged</p>';
           return;
         }
-        list.innerHTML = errors
+        list.innerHTML = events
           .slice()
           .reverse()
           .map(
             (e) => `
-          <div class="error-item">
+          <div class="error-item ${e.level === 'success' ? 'success' : ''}" onclick="this.classList.toggle('expanded')">
             <div class="error-time">${new Date(e.time).toLocaleString()}</div>
             <div class="error-source">${e.source}</div>
             <div class="error-message">${e.message}</div>
