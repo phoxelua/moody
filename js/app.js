@@ -274,6 +274,18 @@ const GREETINGS = [
 const greeting = document.getElementById('greeting');
 greeting.textContent = GREETINGS[dayOfYear % GREETINGS.length];
 
+// --- Form validation ---
+function checkFormValidity() {
+  const valid =
+    getSingleValue('happiness') &&
+    getSingleValue('sleep') &&
+    getSingleValue('ate') &&
+    getSelectedChips('emotion-chips').length > 0 &&
+    getSelectedChips('social-chips').length > 0 &&
+    getSelectedChips('activity-chips').length > 0;
+  submitBtn.disabled = !valid;
+}
+
 // --- Face selector (happiness, single-select) ---
 document.querySelectorAll('.face-row').forEach((row) => {
   row.addEventListener('click', (e) => {
@@ -283,6 +295,7 @@ document.querySelectorAll('.face-row').forEach((row) => {
       .querySelectorAll('.face')
       .forEach((f) => f.classList.remove('selected'));
     face.classList.add('selected');
+    checkFormValidity();
   });
 });
 
@@ -295,6 +308,7 @@ document.querySelectorAll('.scale-row').forEach((row) => {
       .querySelectorAll('.scale-btn')
       .forEach((b) => b.classList.remove('selected'));
     btn.classList.add('selected');
+    checkFormValidity();
   });
 });
 
@@ -319,11 +333,13 @@ document.querySelectorAll('.chip-grid').forEach((grid) => {
     }
 
     chip.classList.toggle('selected');
+    checkFormValidity();
   });
 });
 
 // --- Submit ---
 const submitBtn = document.getElementById('submit-btn');
+submitBtn.disabled = true;
 const syncStatus = document.getElementById('sync-status');
 
 function getSelectedChips(sectionId) {
@@ -400,6 +416,8 @@ submitBtn.addEventListener('click', async () => {
     try {
       await window.MoodySheets.appendRow(entry);
       showSync('Synced to Google Sheets');
+      // Auto-close after successful sync
+      setTimeout(() => window.close(), 1500);
     } catch {
       showSync('Saved locally (sync failed)');
     }
@@ -539,8 +557,15 @@ function weatherCodeInfo(code) {
   return { emoji: '🌩️', text: 'Stormy' };
 }
 
-// --- Google Auth ---
+// --- Google Auth (gates the form) ---
 const signInBtn = document.getElementById('sign-in-btn');
+const checkinForm = document.getElementById('checkin-form');
+
+function showForm() {
+  checkinForm.style.display = '';
+  signInBtn.style.display = 'none';
+  checkFormValidity();
+}
 
 function initAuth() {
   if (typeof google === 'undefined') {
@@ -552,7 +577,9 @@ function initAuth() {
 
   window.MoodySheets.initGoogleAuth();
 
-  if (!window.MoodySheets.hasConnected()) {
+  if (window.MoodySheets.hasConnected()) {
+    showForm();
+  } else {
     signInBtn.style.display = 'block';
   }
 }
@@ -560,7 +587,7 @@ function initAuth() {
 signInBtn.addEventListener('click', async () => {
   try {
     await window.MoodySheets.signIn();
-    signInBtn.style.display = 'none';
+    showForm();
     showSync('Connected to Google Sheets');
   } catch {
     showSync('Sign-in failed');
