@@ -574,10 +574,50 @@ window.MoodyErrors.logSuccess('app', 'App loaded', window.location.hostname);
 // Geolocation-based defaults (Travel, Cook, Weather, header)
 let currentWeather = null;
 
-if (!('geolocation' in navigator)) {
-  window.MoodyErrors.logError('geolocation', 'Geolocation not supported');
+// SF fallback coordinates
+const SF_LAT = 37.7749;
+const SF_LNG = -122.4194;
+
+async function fetchWeatherAndLocation(lat, lng, isFallback) {
+  try {
+    const [weatherRes, geoRes] = await Promise.all([
+      fetch(
+        `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&daily=temperature_2m_max,weather_code&temperature_unit=fahrenheit&timezone=auto&forecast_days=1`,
+      ),
+      fetch(
+        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=10`,
+      ),
+    ]);
+    const weatherData = await weatherRes.json();
+    const temp = Math.round(weatherData.daily.temperature_2m_max[0]);
+    const code = weatherData.daily.weather_code[0];
+    const info = weatherCodeInfo(code);
+    currentWeather = `${temp}°F, ${info.text}`;
+
+    const geoData = await geoRes.json();
+    const city =
+      geoData.address.city ||
+      geoData.address.town ||
+      geoData.address.village ||
+      '';
+
+    const locationNote = isFallback ? ' (approx)' : '';
+    headerMeta.textContent = `${dateStr} · ${city ? city + locationNote + ' · ' : ''}${info.emoji} ${temp}°F ${info.text}`;
+    window.MoodyErrors.logSuccess('location', isFallback ? 'Fallback to SF' : 'Got location + weather', `${city || 'Unknown'} · ${temp}°F ${info.text}`);
+  } catch (err) {
+    window.MoodyErrors.logError('weather', 'Weather/geo API failed', err.message);
+  }
 }
-if ('geolocation' in navigator) {
+
+if (!('geolocation' in navigator)) {
+  window.MoodyErrors.logError('geolocation', 'Geolocation not supported, using SF fallback');
+  fetchWeatherAndLocation(SF_LAT, SF_LNG, true);
+  // Assume home for auto-selections
+  if (dayOfWeek !== 5) {
+    const cookChip = document.querySelector('#activity-chips .chip[data-value="Cook"]');
+    if (cookChip) cookChip.classList.add('selected');
+  }
+} else {
   navigator.geolocation.getCurrentPosition(
     async (pos) => {
     const lat = pos.coords.latitude;
@@ -603,37 +643,16 @@ if ('geolocation' in navigator) {
       if (cookChip) cookChip.classList.add('selected');
     }
 
-    // Fetch daily high weather + location in parallel
-    try {
-      const [weatherRes, geoRes] = await Promise.all([
-        fetch(
-          `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&daily=temperature_2m_max,weather_code&temperature_unit=fahrenheit&timezone=auto&forecast_days=1`,
-        ),
-        fetch(
-          `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=10`,
-        ),
-      ]);
-      const weatherData = await weatherRes.json();
-      const temp = Math.round(weatherData.daily.temperature_2m_max[0]);
-      const code = weatherData.daily.weather_code[0];
-      const info = weatherCodeInfo(code);
-      currentWeather = `${temp}°F, ${info.text}`;
-
-      const geoData = await geoRes.json();
-      const city =
-        geoData.address.city ||
-        geoData.address.town ||
-        geoData.address.village ||
-        '';
-
-      headerMeta.textContent = `${dateStr} · ${city ? city + ' · ' : ''}${info.emoji} ${temp}°F ${info.text}`;
-      window.MoodyErrors.logSuccess('location', 'Got location + weather', `${city || 'Unknown'} · ${temp}°F ${info.text}`);
-    } catch (err) {
-      window.MoodyErrors.logError('weather', 'Weather/geo API failed', err.message);
-    }
+    await fetchWeatherAndLocation(lat, lng, false);
     },
     (err) => {
-      window.MoodyErrors.logError('geolocation', 'Location unavailable', err.message);
+      window.MoodyErrors.logError('geolocation', 'Location unavailable, using SF fallback', err.message);
+      fetchWeatherAndLocation(SF_LAT, SF_LNG, true);
+      // Assume home for auto-selections
+      if (dayOfWeek !== 5) {
+        const cookChip = document.querySelector('#activity-chips .chip[data-value="Cook"]');
+        if (cookChip) cookChip.classList.add('selected');
+      }
     },
     { enableHighAccuracy: true, timeout: 15000 },
   );
