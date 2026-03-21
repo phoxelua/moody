@@ -132,20 +132,25 @@ async function findTodayRow() {
 
   for (let i = 1; i < data.values.length; i++) {
     if (data.values[i][0] && data.values[i][0].startsWith(todayPrefix)) {
+      window.MoodyErrors.logSuccess('sheets', `Found today's row: ${i + 1}`, `"${data.values[i][0]}" matches "${todayPrefix}"`);
       return i + 1; // 1-indexed row number
     }
   }
+  window.MoodyErrors.logSuccess('sheets', 'No existing row for today', `Prefix: "${todayPrefix}"`);
   return null;
 }
 
 async function saveRow(entry) {
-  const token = await getToken();
   const values = [formatRow(entry)];
   const existingRow = await findTodayRow();
+
+  // Get a fresh token right before the write
+  const token = await getToken();
 
   let response;
   if (existingRow) {
     // Update existing row (last write wins)
+    window.MoodyErrors.logSuccess('sheets', `Updating row ${existingRow}`, JSON.stringify(values[0].slice(0, 5)));
     response = await fetch(
       `${SHEETS_API}/${SHEET_ID}/values/Entries!A${existingRow}:K${existingRow}?valueInputOption=USER_ENTERED`,
       {
@@ -159,6 +164,7 @@ async function saveRow(entry) {
     );
   } else {
     // Append new row
+    window.MoodyErrors.logSuccess('sheets', 'Appending new row', JSON.stringify(values[0].slice(0, 5)));
     response = await fetch(
       `${SHEETS_API}/${SHEET_ID}/values/Entries!A:K:append?valueInputOption=USER_ENTERED`,
       {
