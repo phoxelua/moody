@@ -1,12 +1,13 @@
 const NOTIF_HOUR_KEY = 'moody_notif_hour';
+const NOTIF_MINUTE_KEY = 'moody_notif_minute';
 const NOTIF_KEY = 'moody_notif_enabled';
 
 function getNotifHour() {
   return Number(localStorage.getItem(NOTIF_HOUR_KEY)) || 23;
 }
 
-function setNotifHour(hour) {
-  localStorage.setItem(NOTIF_HOUR_KEY, String(hour));
+function getNotifMinute() {
+  return Number(localStorage.getItem(NOTIF_MINUTE_KEY)) || 0;
 }
 
 async function requestPermission() {
@@ -27,7 +28,7 @@ function scheduleNightly() {
     const now = new Date();
     if (
       now.getHours() === getNotifHour() &&
-      now.getMinutes() === 0 &&
+      now.getMinutes() === getNotifMinute() &&
       localStorage.getItem(NOTIF_KEY) === 'true'
     ) {
       showNotification();
@@ -68,5 +69,5 @@ window.MoodyNotifications = {
   enable,
   isEnabled,
   getNotifHour,
-  setNotifHour,
+  getNotifMinute,
 };

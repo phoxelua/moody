@@ -1,4 +1,4 @@
-const CACHE_NAME = 'moody-v40';
+const CACHE_NAME = 'moody-v41';
 const ASSETS = [
   './',
   './index.html',
@@ -10,6 +10,7 @@ const ASSETS = [
   './js/sheets.js',
   './js/notifications.js',
   './manifest.json',
+  './build-info.json',
 ];
 
 self.addEventListener('install', (event) => {
