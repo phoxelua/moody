@@ -7,7 +7,7 @@
       content="width=device-width, initial-scale=1.0, viewport-fit=cover"
     />
     <meta name="theme-color" content="#0f0f14" />
-    <title>Moody — Event Log</title>
+    <title>Moody — Log</title>
     <link rel="stylesheet" href="css/style.css" />
     <style>
       .log-header {
@@ -40,41 +40,59 @@
       .event-list {
         display: flex;
         flex-direction: column;
-        gap: 12px;
+        gap: 6px;
       }
       .event-item {
         background: var(--bg-card);
         border-radius: var(--radius-sm);
-        padding: 12px 14px;
+        padding: 10px 14px;
         border-left: 3px solid var(--negative);
+        cursor: pointer;
+        user-select: none;
       }
       .event-item.success {
         border-left-color: var(--positive);
       }
-      .event-time {
-        font-size: 0.7rem;
-        color: var(--text-muted);
-        margin-bottom: 4px;
+      .event-summary {
+        display: flex;
+        align-items: center;
+        gap: 8px;
       }
       .event-source {
         font-size: 0.7rem;
         font-weight: 600;
         text-transform: uppercase;
         color: var(--negative);
-        margin-bottom: 4px;
+        flex-shrink: 0;
       }
       .event-item.success .event-source {
         color: var(--positive);
       }
       .event-message {
-        font-size: 0.85rem;
+        font-size: 0.8rem;
         color: var(--text);
-        word-break: break-word;
+        flex: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .event-detail-section {
+        display: none;
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid var(--bg-elevated);
+      }
+      .event-item.expanded .event-detail-section {
+        display: block;
+      }
+      .event-time {
+        font-size: 0.65rem;
+        color: var(--text-muted);
+        margin-bottom: 4px;
       }
       .event-detail {
         font-size: 0.75rem;
         color: var(--text-muted);
-        margin-top: 4px;
         word-break: break-word;
       }
       .empty {
@@ -89,7 +107,7 @@
     <div id="app">
       <div class="log-header">
         <a href="index.html" class="back-link">&larr; Back</a>
-        <h1>Event Log</h1>
+        <h1>Log</h1>
         <button class="clear-btn" id="clear-btn">Clear</button>
       </div>
       <div class="event-list" id="event-list"></div>
@@ -110,11 +128,15 @@
           .reverse()
           .map(
             (e) => `
-          <div class="event-item ${e.level === 'success' ? 'success' : ''}">
-            <div class="event-time">${new Date(e.time).toLocaleString()}</div>
-            <div class="event-source">${e.source}</div>
-            <div class="event-message">${e.message}</div>
-            ${e.detail ? `<div class="event-detail">${e.detail}</div>` : ''}
+          <div class="event-item ${e.level === 'success' ? 'success' : ''}" onclick="this.classList.toggle('expanded')">
+            <div class="event-summary">
+              <span class="event-source">${e.source}</span>
+              <span class="event-message">${e.message}</span>
+            </div>
+            <div class="event-detail-section">
+              <div class="event-time">${new Date(e.time).toLocaleString()}</div>
+              ${e.detail ? `<div class="event-detail">${e.detail}</div>` : ''}
+            </div>
           </div>`,
           )
           .join('');
