@@ -350,13 +350,25 @@ document.querySelectorAll('.chip-grid').forEach((grid) => {
 
     chip.classList.toggle('selected');
 
-    // If selected from expanded section, move it up to main grid
+    // Move chip to main grid if selected from expanded section
     if (chip.classList.contains('selected') && chip.closest('.chip-grid--expanded')) {
       const expandedGrid = chip.closest('.chip-grid--expanded');
       const mainGridId = expandedGrid.id.replace('-expanded', '-chips');
       const mainGrid = document.getElementById(mainGridId);
       const moreBtn = mainGrid.querySelector('.chip--more');
       mainGrid.insertBefore(chip, moreBtn);
+    }
+
+    // Group selected chips together at the front of their grid
+    const parentGrid = chip.closest('.chip-grid');
+    if (parentGrid) {
+      const allChips = [...parentGrid.querySelectorAll('.chip:not(.chip--more)')];
+      const moreBtn = parentGrid.querySelector('.chip--more');
+      const selected = allChips.filter((c) => c.classList.contains('selected'));
+      const unselected = allChips.filter((c) => !c.classList.contains('selected'));
+      for (const c of [...selected, ...unselected]) {
+        parentGrid.insertBefore(c, moreBtn);
+      }
     }
 
     checkFormValidity();
