@@ -198,6 +198,12 @@
       const list = document.getElementById('error-list');
       const clearBtn = document.getElementById('clear-btn');
 
+      const _e = document.createElement('div');
+      function esc(str) {
+        _e.textContent = str ?? '';
+        return _e.innerHTML;
+      }
+
       function render() {
         const events = JSON.parse(localStorage.getItem(LOG_KEY) || '[]');
         if (events.length === 0) {
@@ -210,10 +216,10 @@
           .map(
             (e) => `
           <div class="error-item ${e.level === 'success' ? 'success' : ''}" onclick="this.classList.toggle('expanded')">
-            <div class="error-time">${new Date(e.time).toLocaleString()}</div>
-            <div class="error-source">${e.source}</div>
-            <div class="error-message">${e.message}</div>
-            ${e.detail ? `<div class="error-detail">${e.detail}</div>` : ''}
+            <div class="error-time">${esc(new Date(e.time).toLocaleString())}</div>
+            <div class="error-source">${esc(e.source)}</div>
+            <div class="error-message">${esc(e.message)}</div>
+            ${e.detail ? `<div class="error-detail">${esc(e.detail)}</div>` : ''}
           </div>`,
           )
           .join('');

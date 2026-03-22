@@ -117,6 +117,12 @@
       const list = document.getElementById('event-list');
       const clearBtn = document.getElementById('clear-btn');
 
+      const _e = document.createElement('div');
+      function esc(str) {
+        _e.textContent = str ?? '';
+        return _e.innerHTML;
+      }
+
       function render() {
         const events = JSON.parse(localStorage.getItem(LOG_KEY) || '[]');
         if (events.length === 0) {
@@ -130,12 +136,12 @@
             (e) => `
           <div class="event-item ${e.level === 'success' ? 'success' : ''}" onclick="this.classList.toggle('expanded')">
             <div class="event-summary">
-              <span class="event-source">${e.source}</span>
-              <span class="event-message">${e.message}</span>
+              <span class="event-source">${esc(e.source)}</span>
+              <span class="event-message">${esc(e.message)}</span>
             </div>
             <div class="event-detail-section">
-              <div class="event-time">${new Date(e.time).toLocaleString()}</div>
-              ${e.detail ? `<div class="event-detail">${e.detail}</div>` : ''}
+              <div class="event-time">${esc(new Date(e.time).toLocaleString())}</div>
+              ${e.detail ? `<div class="event-detail">${esc(e.detail)}</div>` : ''}
             </div>
           </div>`,
           )
