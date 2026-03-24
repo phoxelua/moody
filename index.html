@@ -18,6 +18,10 @@
     <link rel="stylesheet" href="css/style.css" />
   </head>
   <body>
+    <div id="splash">
+      <span id="splash-title">Moody</span>
+      <p id="splash-sub">How are you feeling today?</p>
+    </div>
     <div id="app">
       <header>
         <h1 id="title">Moody</h1>
@@ -326,8 +330,16 @@
 
         <!-- Submit -->
         <button id="submit-btn" class="submit-btn">✨ Save</button>
+        <p id="sync-error" class="sync-error" style="display:none"></p>
       </main>
       <a href="settings.html" class="settings-link" title="Settings">⚙️</a>
+    </div>
+
+    <!-- Success screen -->
+    <div id="success-screen">
+      <div class="success-check">✓</div>
+      <h2 class="success-heading">Saved</h2>
+      <p id="success-streak" class="success-streak"></p>
     </div>
     <script src="https://accounts.google.com/gsi/client" async></script>
     <script src="js/config.js"></script>

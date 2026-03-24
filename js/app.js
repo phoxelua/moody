@@ -1,3 +1,7 @@
+// --- Splash screen ---
+const splash = document.getElementById('splash');
+if (splash) splash.addEventListener('animationend', () => splash.remove(), { once: true });
+
 // --- Daily Quote (placeholder for grateful textarea) ---
 const QUOTES = [
   ['Breathe in calm, breathe out tension.', 'Thich Nhat Hanh'],
@@ -491,6 +495,20 @@ function localISOString() {
   );
 }
 
+function calcStreak() {
+  const entries = window.MoodyStorage.getEntries();
+  if (entries.length === 0) return 1;
+  const days = [...new Set(entries.map((e) => new Date(e.date).toDateString()))]
+    .map((d) => new Date(d))
+    .sort((a, b) => b - a);
+  let streak = 1;
+  for (let i = 1; i < days.length; i++) {
+    if (Math.round((days[i - 1] - days[i]) / 86400000) === 1) streak++;
+    else break;
+  }
+  return streak;
+}
+
 submitBtn.addEventListener('click', async () => {
   const entry = {
     date: localISOString(),
@@ -508,30 +526,34 @@ submitBtn.addEventListener('click', async () => {
   window.MoodyStorage.saveEntry(entry);
   sessionStorage.removeItem(FORM_STATE_KEY);
 
-  submitBtn.textContent = '✅ Saved!';
+  submitBtn.textContent = '✅ Saving…';
   submitBtn.classList.add('success');
   submitBtn.disabled = true;
 
-  // Sync to Google Sheets in the background
+  // Sync to Google Sheets
   if (window.MoodySheets.hasConnected()) {
     try {
       await window.MoodySheets.saveRow(entry);
       window.MoodyErrors.logSuccess('sheets', 'Synced to Google Sheets');
-      showSync('Synced to Google Sheets');
-      // Auto-close after successful sync
-      setTimeout(() => window.close(), 1500);
     } catch (err) {
       window.MoodyErrors.logError('sheets', 'Sync failed', err.message);
-      showSync('Saved locally (sync failed)');
+      // Stay on form, surface the error
+      const syncError = document.getElementById('sync-error');
+      syncError.textContent = `Sync failed: ${err.message}. Your entry is saved locally — open the app again and tap Save to retry.`;
+      syncError.style.display = 'block';
+      submitBtn.textContent = '✨ Save';
+      submitBtn.classList.remove('success');
+      submitBtn.disabled = false;
+      return;
     }
   }
 
-  setTimeout(() => {
-    submitBtn.textContent = '✨ Save';
-    submitBtn.classList.remove('success');
-    submitBtn.disabled = false;
-    resetForm();
-  }, 2000);
+  // Success — show screen and auto-close
+  const streak = calcStreak();
+  const streakEl = document.getElementById('success-streak');
+  streakEl.textContent = streak === 1 ? '✨ First entry — keep going!' : `🔥 ${streak}-day streak`;
+  document.getElementById('success-screen').classList.add('visible');
+  setTimeout(() => window.close(), 2500);
 });
 
 function showSync(message) {
