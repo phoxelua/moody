@@ -553,7 +553,6 @@ submitBtn.addEventListener('click', async () => {
   const streakEl = document.getElementById('success-streak');
   streakEl.textContent = streak === 1 ? '✨ First entry — keep going!' : `🔥 ${streak}-day streak`;
   document.getElementById('success-screen').classList.add('visible');
-  setTimeout(() => window.close(), 2500);
 });
 
 function showSync(message) {
