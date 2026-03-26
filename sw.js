@@ -1,4 +1,4 @@
-const CACHE_NAME = 'moody-v49';
+const CACHE_NAME = 'moody-v50';
 const ASSETS = [
   './',
   './index.html',
