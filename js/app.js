@@ -261,6 +261,14 @@ const QUOTES = [
 ];
 
 const today = new Date();
+const hour = today.getHours();
+
+// If logging between midnight–4am, default to yesterday's date
+let entryDate = new Date(today);
+if (hour < 4) {
+  entryDate.setDate(today.getDate() - 1);
+}
+
 const dayOfYear = Math.floor(
   (today - new Date(today.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24),
 );
@@ -469,8 +477,8 @@ document
 // Save form state on text input
 document.getElementById('grateful').addEventListener('input', saveFormState);
 
-function localISOString() {
-  const now = new Date();
+function localISOString(date) {
+  const now = date || new Date();
   const offset = -now.getTimezoneOffset();
   const sign = offset >= 0 ? '+' : '-';
   const pad = (n) => String(Math.abs(n)).padStart(2, '0');
@@ -511,7 +519,7 @@ function calcStreak() {
 
 submitBtn.addEventListener('click', async () => {
   const entry = {
-    date: localISOString(),
+    date: localISOString(entryDate),
     happiness: getSingleValue('happiness'),
     emotions: getSelectedChips('emotion-chips'),
     social: getSelectedChips('social-chips'),
@@ -588,7 +596,7 @@ function resetForm() {
 }
 
 // --- Auto-select defaults ---
-const dayOfWeek = today.getDay();
+const dayOfWeek = entryDate.getDay();
 if (dayOfWeek >= 1 && dayOfWeek <= 5) {
   const workChip = document.querySelector(
     '#activity-chips .chip[data-value="Work"]',
@@ -674,11 +682,13 @@ if (restoreFormState()) {
 
 // --- Header meta (date + location + weather) ---
 const headerMeta = document.getElementById('header-meta');
-const dateStr = today.toLocaleDateString('en-US', {
-  weekday: 'short',
-  month: 'short',
-  day: 'numeric',
-});
+let headerWeatherSuffix = '';
+
+function fmtDate(d) {
+  return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
+let dateStr = fmtDate(entryDate);
 headerMeta.textContent = dateStr;
 
 // Log app load
@@ -717,7 +727,8 @@ async function fetchWeatherAndLocation(lat, lng, isFallback) {
 
     const locationNote = isFallback ? ' (approx)' : '';
     currentLocation = city ? city + locationNote : '';
-    headerMeta.textContent = `${dateStr} · ${city ? city + locationNote + ' · ' : ''}${info.emoji} ${temp}°F ${info.text}`;
+    headerWeatherSuffix = `${city ? city + locationNote + ' · ' : ''}${info.emoji} ${temp}°F ${info.text}`;
+    headerMeta.textContent = `${dateStr} · ${headerWeatherSuffix}`;
     window.MoodyErrors.logSuccess('location', isFallback ? 'Fallback to SF' : 'Got location + weather', `${city || 'Unknown'} · ${temp}°F ${info.text}`);
   } catch (err) {
     window.MoodyErrors.logError('weather', 'Weather/geo API failed', err.message);
@@ -789,9 +800,37 @@ function weatherCodeInfo(code) {
 const signInBtn = document.getElementById('sign-in-btn');
 const checkinForm = document.getElementById('checkin-form');
 
+// --- Late-night date banner (midnight–4am) ---
+function setupDateBanner() {
+  if (hour >= 4) return;
+
+  const dateBanner = document.getElementById('date-banner');
+  const btnYesterday = document.getElementById('btn-yesterday');
+  const btnToday = document.getElementById('btn-today');
+
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+
+  btnYesterday.textContent = fmtDate(yesterday);
+  btnToday.textContent = fmtDate(today);
+  dateBanner.style.display = 'flex';
+
+  function selectEntryDate(useYesterday) {
+    entryDate = useYesterday ? new Date(yesterday) : new Date(today);
+    btnYesterday.classList.toggle('date-opt--active', useYesterday);
+    btnToday.classList.toggle('date-opt--active', !useYesterday);
+    dateStr = fmtDate(entryDate);
+    headerMeta.textContent = headerWeatherSuffix ? `${dateStr} · ${headerWeatherSuffix}` : dateStr;
+  }
+
+  btnYesterday.addEventListener('click', () => selectEntryDate(true));
+  btnToday.addEventListener('click', () => selectEntryDate(false));
+}
+
 function showForm() {
   checkinForm.style.display = '';
   signInBtn.style.display = 'none';
+  setupDateBanner();
   checkFormValidity();
 }
 
