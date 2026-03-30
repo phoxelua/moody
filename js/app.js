@@ -263,9 +263,9 @@ const QUOTES = [
 const today = new Date();
 const hour = today.getHours();
 
-// If logging between midnight–4am, default to yesterday's date
+// If logging between midnight–11am, default to yesterday's date
 let entryDate = new Date(today);
-if (hour < 4) {
+if (hour < 11) {
   entryDate.setDate(today.getDate() - 1);
 }
 
@@ -800,9 +800,9 @@ function weatherCodeInfo(code) {
 const signInBtn = document.getElementById('sign-in-btn');
 const checkinForm = document.getElementById('checkin-form');
 
-// --- Late-night date banner (midnight–4am) ---
+// --- Late-night date banner (midnight–11am) ---
 function setupDateBanner() {
-  if (hour >= 4) return;
+  if (hour >= 11) return;
 
   const dateBanner = document.getElementById('date-banner');
   const btnYesterday = document.getElementById('btn-yesterday');
