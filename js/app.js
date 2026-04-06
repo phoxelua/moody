@@ -559,7 +559,8 @@ submitBtn.addEventListener('click', async () => {
   // Success — show screen and auto-close
   const streak = calcStreak();
   const streakEl = document.getElementById('success-streak');
-  streakEl.textContent = streak === 1 ? '✨ First entry — keep going!' : `🔥 ${streak}-day streak`;
+  const entries = window.MoodyStorage.getEntries();
+  streakEl.textContent = streak === 1 && entries.length <= 1 ? '✨ First entry — keep going!' : `🔥 ${streak}-day streak`;
   document.getElementById('success-screen').classList.add('visible');
 });
 
