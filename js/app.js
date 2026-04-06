@@ -834,11 +834,20 @@ function showForm() {
   checkFormValidity();
 }
 
+let initAuthRetries = 0;
 function initAuth() {
   if (typeof google === 'undefined') {
-    window.addEventListener('load', () => {
-      setTimeout(initAuth, 500);
-    });
+    initAuthRetries++;
+    if (initAuthRetries > 20) {
+      window.MoodyErrors.logError('auth', 'Google GSI library failed to load after retries');
+      if (window.MoodySheets.hasConnected()) {
+        showForm();
+      } else {
+        signInBtn.style.display = 'block';
+      }
+      return;
+    }
+    setTimeout(initAuth, 500);
     return;
   }
 

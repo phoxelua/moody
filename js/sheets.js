@@ -50,8 +50,9 @@ function requestToken(prompt) {
   });
 }
 
-async function getToken() {
-  if (accessToken) return accessToken;
+async function getToken(forceRefresh = false) {
+  if (accessToken && !forceRefresh) return accessToken;
+  accessToken = null;
   try {
     return await requestToken('');
   } catch {
@@ -59,35 +60,43 @@ async function getToken() {
   }
 }
 
+async function fetchWithAuth(url, options = {}) {
+  let token = await getToken();
+  let response = await fetch(url, {
+    ...options,
+    headers: { ...options.headers, Authorization: `Bearer ${token}` },
+  });
+  if (response.status === 401) {
+    token = await getToken(true);
+    response = await fetch(url, {
+      ...options,
+      headers: { ...options.headers, Authorization: `Bearer ${token}` },
+    });
+  }
+  return response;
+}
+
 async function ensureEntriesTab() {
-  const token = await getToken();
-  const response = await fetch(
+  const response = await fetchWithAuth(
     `${SHEETS_API}/${getSheetId()}/values/Entries!A1:K1`,
-    { headers: { Authorization: `Bearer ${token}` } },
   );
   if (response.ok) return;
 
   // Create the Entries tab
-  await fetch(`${SHEETS_API}/${getSheetId()}:batchUpdate`, {
+  await fetchWithAuth(`${SHEETS_API}/${getSheetId()}:batchUpdate`, {
     method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       requests: [{ addSheet: { properties: { title: 'Entries' } } }],
     }),
   });
 
   // Add headers
-  await fetch(
+  await fetchWithAuth(
     `${SHEETS_API}/${getSheetId()}/values/Entries!A1:K1?valueInputOption=USER_ENTERED`,
     {
       method: 'PUT',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ values: [HEADERS] }),
     },
   );
@@ -115,10 +124,8 @@ function formatRow(entry) {
 }
 
 async function findTodayRow() {
-  const token = await getToken();
-  const response = await fetch(
+  const response = await fetchWithAuth(
     `${SHEETS_API}/${getSheetId()}/values/Entries!A:A`,
-    { headers: { Authorization: `Bearer ${token}` } },
   );
   if (!response.ok) return null;
   const data = await response.json();
@@ -144,35 +151,26 @@ async function saveRow(entry) {
   const values = [formatRow(entry)];
   const existingRow = await findTodayRow();
 
-  // Get a fresh token right before the write
-  const token = await getToken();
-
   let response;
   if (existingRow) {
     // Update existing row (last write wins)
     window.MoodyErrors.logSuccess('sheets', `Updating row ${existingRow}`, JSON.stringify(values[0].slice(0, 5)));
-    response = await fetch(
+    response = await fetchWithAuth(
       `${SHEETS_API}/${getSheetId()}/values/Entries!A${existingRow}:K${existingRow}?valueInputOption=USER_ENTERED`,
       {
         method: 'PUT',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ values }),
       },
     );
   } else {
     // Append new row
     window.MoodyErrors.logSuccess('sheets', 'Appending new row', JSON.stringify(values[0].slice(0, 5)));
-    response = await fetch(
+    response = await fetchWithAuth(
       `${SHEETS_API}/${getSheetId()}/values/Entries!A:K:append?valueInputOption=USER_ENTERED`,
       {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ values }),
       },
     );
@@ -194,14 +192,11 @@ async function saveRow(entry) {
     localStorage.setItem('moody_sync_queue', '[]');
     for (const queued of queue) {
       const queuedValues = [formatRow(queued)];
-      const queuedRes = await fetch(
+      const queuedRes = await fetchWithAuth(
         `${SHEETS_API}/${getSheetId()}/values/Entries!A:K:append?valueInputOption=USER_ENTERED`,
         {
           method: 'POST',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ values: queuedValues }),
         },
       );
@@ -215,14 +210,13 @@ async function saveRow(entry) {
 }
 
 async function readEntries() {
-  const token = await getToken();
-  const response = await fetch(
+  const response = await fetchWithAuth(
     `${SHEETS_API}/${getSheetId()}/values/Entries!A2:K?majorDimension=ROWS`,
-    {
-      headers: { Authorization: `Bearer ${token}` },
-    },
   );
 
+  if (!response.ok) {
+    throw new Error(`Sheets API error: ${response.status}`);
+  }
   const data = await response.json();
   if (!data.values) return [];
 
