@@ -750,54 +750,91 @@ async function fetchWeatherAndLocation(lat, lng, isFallback) {
   }
 }
 
-if (!('geolocation' in navigator)) {
-  window.MoodyErrors.logError('geolocation', 'Geolocation not supported, using SF fallback');
-  fetchWeatherAndLocation(SF_LAT, SF_LNG, true);
-  // Assume home for auto-selections
-  if (dayOfWeek !== 5) {
-    const cookChip = document.querySelector('#activity-chips .chip[data-value="Cook"]');
+function handleLocation(lat, lng, isFallback) {
+  if (!isFallback) {
+    localStorage.setItem('moody_last_coords', JSON.stringify({ lat, lng, ts: Date.now() }));
+  }
+
+  const inBayArea =
+    lat >= 37.2 && lat <= 37.9 && lng >= -122.6 && lng <= -121.7;
+  const inStockton =
+    lat >= 37.85 && lat <= 38.1 && lng >= -121.5 && lng <= -121.1;
+  const isHome = inBayArea || inStockton;
+
+  if (!isHome) {
+    const travelChip = document.querySelector(
+      '#activity-expanded .chip[data-value="Travel"]',
+    );
+    if (travelChip) travelChip.classList.add('selected');
+  }
+
+  if (isHome && dayOfWeek !== 5) {
+    const cookChip = document.querySelector(
+      '#activity-chips .chip[data-value="Cook"]',
+    );
     if (cookChip) cookChip.classList.add('selected');
   }
-} else {
+
+  fetchWeatherAndLocation(lat, lng, isFallback);
+}
+
+function getCachedCoords() {
+  try {
+    const cached = JSON.parse(localStorage.getItem('moody_last_coords'));
+    if (cached && Date.now() - cached.ts < 24 * 60 * 60 * 1000) return cached;
+  } catch { /* ignore */ }
+  return null;
+}
+
+async function requestLocation() {
+  if (!('geolocation' in navigator)) {
+    window.MoodyErrors.logError('geolocation', 'Geolocation not supported, using SF fallback');
+    handleLocation(SF_LAT, SF_LNG, true);
+    return;
+  }
+
+  // Check permission status to avoid re-prompting
+  let permStatus = null;
+  if (navigator.permissions) {
+    try {
+      permStatus = (await navigator.permissions.query({ name: 'geolocation' })).state;
+    } catch { /* permissions API not supported, proceed normally */ }
+  }
+
+  if (permStatus === 'denied') {
+    const cached = getCachedCoords();
+    if (cached) {
+      window.MoodyErrors.logSuccess('geolocation', 'Permission denied, using cached coords');
+      handleLocation(cached.lat, cached.lng, false);
+    } else {
+      window.MoodyErrors.logError('geolocation', 'Permission denied, no cache, using SF fallback');
+      handleLocation(SF_LAT, SF_LNG, true);
+    }
+    return;
+  }
+
+  if (permStatus === 'prompt') {
+    // Would trigger a prompt — use cache if available
+    const cached = getCachedCoords();
+    if (cached) {
+      window.MoodyErrors.logSuccess('geolocation', 'Using cached coords to avoid prompt');
+      handleLocation(cached.lat, cached.lng, false);
+      return;
+    }
+  }
+
+  // Permission granted or no cache — request live location
   navigator.geolocation.getCurrentPosition(
-    async (pos) => {
-    const lat = pos.coords.latitude;
-    const lng = pos.coords.longitude;
-    const inBayArea =
-      lat >= 37.2 && lat <= 37.9 && lng >= -122.6 && lng <= -121.7;
-    const inStockton =
-      lat >= 37.85 && lat <= 38.1 && lng >= -121.5 && lng <= -121.1;
-    const isHome = inBayArea || inStockton;
-
-    if (!isHome) {
-      const travelChip = document.querySelector(
-        '#activity-expanded .chip[data-value="Travel"]',
-      );
-      if (travelChip) travelChip.classList.add('selected');
-    }
-
-    // Auto-select Cook every day except Friday, not if traveling
-    if (isHome && dayOfWeek !== 5) {
-      const cookChip = document.querySelector(
-        '#activity-chips .chip[data-value="Cook"]',
-      );
-      if (cookChip) cookChip.classList.add('selected');
-    }
-
-    await fetchWeatherAndLocation(lat, lng, false);
-    },
+    (pos) => handleLocation(pos.coords.latitude, pos.coords.longitude, false),
     (err) => {
       window.MoodyErrors.logError('geolocation', 'Location unavailable, using SF fallback', err.message);
-      fetchWeatherAndLocation(SF_LAT, SF_LNG, true);
-      // Assume home for auto-selections
-      if (dayOfWeek !== 5) {
-        const cookChip = document.querySelector('#activity-chips .chip[data-value="Cook"]');
-        if (cookChip) cookChip.classList.add('selected');
-      }
+      handleLocation(SF_LAT, SF_LNG, true);
     },
     { enableHighAccuracy: true, timeout: 15000 },
   );
 }
+
+requestLocation();
 
 function weatherCodeInfo(code) {
   if (code === 0) return { emoji: '☀️', text: 'Clear' };
