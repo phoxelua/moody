@@ -560,7 +560,21 @@ submitBtn.addEventListener('click', async () => {
   const streak = calcStreak();
   const streakEl = document.getElementById('success-streak');
   const entries = window.MoodyStorage.getEntries();
-  streakEl.textContent = streak === 1 && entries.length <= 1 ? '✨ First entry — keep going!' : `🔥 ${streak}-day streak`;
+  if (streak === 1 && entries.length <= 1) {
+    streakEl.textContent = '✨ First entry — keep going!';
+  } else if (streak < 3) {
+    streakEl.textContent = `🔥 ${streak}-day streak`;
+  } else if (streak < 7) {
+    streakEl.textContent = `🔥 ${streak}-day streak — nice rhythm!`;
+  } else if (streak < 14) {
+    streakEl.textContent = `⚡ ${streak}-day streak — on a roll!`;
+  } else if (streak < 30) {
+    streakEl.textContent = `💪 ${streak}-day streak — unstoppable!`;
+  } else if (streak < 100) {
+    streakEl.textContent = `🏆 ${streak}-day streak — legendary!`;
+  } else {
+    streakEl.textContent = `👑 ${streak}-day streak — absolute beast!`;
+  }
   document.getElementById('success-screen').classList.add('visible');
 });
 
