@@ -341,6 +341,16 @@ document.querySelectorAll('.scale-row').forEach((row) => {
 });
 
 // --- Chips (multi-select) ---
+function reorderChips(grid) {
+  const allChips = [...grid.querySelectorAll('.chip:not(.chip--more)')];
+  const moreBtn = grid.querySelector('.chip--more');
+  const selected = allChips.filter((c) => c.classList.contains('selected'));
+  const unselected = allChips.filter((c) => !c.classList.contains('selected'));
+  for (const c of [...selected, ...unselected]) {
+    grid.insertBefore(c, moreBtn);
+  }
+}
+
 document.querySelectorAll('.chip-grid').forEach((grid) => {
   grid.addEventListener('click', (e) => {
     const chip = e.target.closest('.chip');
@@ -371,17 +381,8 @@ document.querySelectorAll('.chip-grid').forEach((grid) => {
       mainGrid.insertBefore(chip, moreBtn);
     }
 
-    // Group selected chips together at the front of their grid
     const parentGrid = chip.closest('.chip-grid');
-    if (parentGrid) {
-      const allChips = [...parentGrid.querySelectorAll('.chip:not(.chip--more)')];
-      const moreBtn = parentGrid.querySelector('.chip--more');
-      const selected = allChips.filter((c) => c.classList.contains('selected'));
-      const unselected = allChips.filter((c) => !c.classList.contains('selected'));
-      for (const c of [...selected, ...unselected]) {
-        parentGrid.insertBefore(c, moreBtn);
-      }
-    }
+    if (parentGrid) reorderChips(parentGrid);
 
     checkFormValidity();
     saveFormState();
@@ -395,7 +396,6 @@ document.querySelectorAll('.chip-custom').forEach((input) => {
     if (!val) return;
     const sectionId = input.dataset.section;
     const mainGrid = document.getElementById(sectionId);
-    const moreBtn = mainGrid.querySelector('.chip--more');
     // Determine chip class from section
     const sectionType = sectionId.replace('-chips', '');
     const classMap = { emotion: 'chip--positive', social: 'chip--social', activity: 'chip--activity' };
@@ -406,10 +406,12 @@ document.querySelectorAll('.chip-custom').forEach((input) => {
     chip.textContent = val;
     chip.addEventListener('click', () => {
       chip.classList.toggle('selected');
+      reorderChips(mainGrid);
       checkFormValidity();
       saveFormState();
     });
-    mainGrid.insertBefore(chip, moreBtn);
+    // Insert at the top of the main grid (before first child)
+    mainGrid.insertBefore(chip, mainGrid.firstChild);
     input.value = '';
     checkFormValidity();
     saveFormState();
@@ -618,6 +620,11 @@ if (dayOfWeek >= 1 && dayOfWeek <= 5) {
   );
   if (workChip) workChip.classList.add('selected');
 }
+
+const codeChip = document.querySelector(
+  '#activity-chips .chip[data-value="Code"]',
+);
+if (codeChip) codeChip.classList.add('selected');
 
 const homeChip = document.querySelector(
   '#social-chips .chip[data-value="Home"]',
