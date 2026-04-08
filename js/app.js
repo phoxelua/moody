@@ -787,43 +787,21 @@ function getCachedCoords() {
 }
 
 async function requestLocation() {
+  // Use cached coords if fresh (avoids iOS PWA re-prompting every launch)
+  const cached = getCachedCoords();
+  if (cached) {
+    window.MoodyErrors.logSuccess('geolocation', 'Using cached coords', `${cached.lat}, ${cached.lng}`);
+    handleLocation(cached.lat, cached.lng, false);
+    return;
+  }
+
   if (!('geolocation' in navigator)) {
     window.MoodyErrors.logError('geolocation', 'Geolocation not supported, using SF fallback');
     handleLocation(SF_LAT, SF_LNG, true);
     return;
   }
 
-  // Check permission status to avoid re-prompting
-  let permStatus = null;
-  if (navigator.permissions) {
-    try {
-      permStatus = (await navigator.permissions.query({ name: 'geolocation' })).state;
-    } catch { /* permissions API not supported, proceed normally */ }
-  }
-
-  if (permStatus === 'denied') {
-    const cached = getCachedCoords();
-    if (cached) {
-      window.MoodyErrors.logSuccess('geolocation', 'Permission denied, using cached coords');
-      handleLocation(cached.lat, cached.lng, false);
-    } else {
-      window.MoodyErrors.logError('geolocation', 'Permission denied, no cache, using SF fallback');
-      handleLocation(SF_LAT, SF_LNG, true);
-    }
-    return;
-  }
-
-  if (permStatus === 'prompt') {
-    // Would trigger a prompt — use cache if available
-    const cached = getCachedCoords();
-    if (cached) {
-      window.MoodyErrors.logSuccess('geolocation', 'Using cached coords to avoid prompt');
-      handleLocation(cached.lat, cached.lng, false);
-      return;
-    }
-  }
-
-  // Permission granted or no cache — request live location
+  // No cache — must request live location (will prompt on first use)
   navigator.geolocation.getCurrentPosition(
     (pos) => handleLocation(pos.coords.latitude, pos.coords.longitude, false),
     (err) => {
