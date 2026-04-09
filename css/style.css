@@ -82,7 +82,7 @@ header h1 {
   justify-content: center;
   z-index: 9999;
   pointer-events: none;
-  animation: splash-out 1.6s ease forwards;
+  animation: splash-out 2s ease forwards;
 }
 
 #splash-title {
@@ -108,10 +108,10 @@ header h1 {
   0% {
     opacity: 0;
   }
-  18% {
+  10% {
     opacity: 1;
   }
-  62% {
+  75% {
     opacity: 1;
   }
   100% {

@@ -341,6 +341,16 @@ document.querySelectorAll('.scale-row').forEach((row) => {
 });
 
 // --- Chips (multi-select) ---
+function reorderChips(grid) {
+  const allChips = [...grid.querySelectorAll('.chip:not(.chip--more)')];
+  const moreBtn = grid.querySelector('.chip--more');
+  const selected = allChips.filter((c) => c.classList.contains('selected'));
+  const unselected = allChips.filter((c) => !c.classList.contains('selected'));
+  for (const c of [...selected, ...unselected]) {
+    grid.insertBefore(c, moreBtn);
+  }
+}
+
 document.querySelectorAll('.chip-grid').forEach((grid) => {
   grid.addEventListener('click', (e) => {
     const chip = e.target.closest('.chip');
@@ -371,17 +381,8 @@ document.querySelectorAll('.chip-grid').forEach((grid) => {
       mainGrid.insertBefore(chip, moreBtn);
     }
 
-    // Group selected chips together at the front of their grid
     const parentGrid = chip.closest('.chip-grid');
-    if (parentGrid) {
-      const allChips = [...parentGrid.querySelectorAll('.chip:not(.chip--more)')];
-      const moreBtn = parentGrid.querySelector('.chip--more');
-      const selected = allChips.filter((c) => c.classList.contains('selected'));
-      const unselected = allChips.filter((c) => !c.classList.contains('selected'));
-      for (const c of [...selected, ...unselected]) {
-        parentGrid.insertBefore(c, moreBtn);
-      }
-    }
+    if (parentGrid) reorderChips(parentGrid);
 
     checkFormValidity();
     saveFormState();
@@ -395,7 +396,6 @@ document.querySelectorAll('.chip-custom').forEach((input) => {
     if (!val) return;
     const sectionId = input.dataset.section;
     const mainGrid = document.getElementById(sectionId);
-    const moreBtn = mainGrid.querySelector('.chip--more');
     // Determine chip class from section
     const sectionType = sectionId.replace('-chips', '');
     const classMap = { emotion: 'chip--positive', social: 'chip--social', activity: 'chip--activity' };
@@ -406,10 +406,12 @@ document.querySelectorAll('.chip-custom').forEach((input) => {
     chip.textContent = val;
     chip.addEventListener('click', () => {
       chip.classList.toggle('selected');
+      reorderChips(mainGrid);
       checkFormValidity();
       saveFormState();
     });
-    mainGrid.insertBefore(chip, moreBtn);
+    // Insert at the top of the main grid (before first child)
+    mainGrid.insertBefore(chip, mainGrid.firstChild);
     input.value = '';
     checkFormValidity();
     saveFormState();
@@ -559,7 +561,22 @@ submitBtn.addEventListener('click', async () => {
   // Success — show screen and auto-close
   const streak = calcStreak();
   const streakEl = document.getElementById('success-streak');
-  streakEl.textContent = streak === 1 ? '✨ First entry — keep going!' : `🔥 ${streak}-day streak`;
+  const entries = window.MoodyStorage.getEntries();
+  if (streak === 1 && entries.length <= 1) {
+    streakEl.textContent = '✨ First entry — keep going!';
+  } else if (streak < 3) {
+    streakEl.textContent = `🔥 ${streak}-day streak`;
+  } else if (streak < 7) {
+    streakEl.textContent = `🔥 ${streak}-day streak — nice rhythm!`;
+  } else if (streak < 14) {
+    streakEl.textContent = `⚡ ${streak}-day streak — on a roll!`;
+  } else if (streak < 30) {
+    streakEl.textContent = `💪 ${streak}-day streak — unstoppable!`;
+  } else if (streak < 100) {
+    streakEl.textContent = `🏆 ${streak}-day streak — legendary!`;
+  } else {
+    streakEl.textContent = `👑 ${streak}-day streak — absolute beast!`;
+  }
   document.getElementById('success-screen').classList.add('visible');
 });
 
@@ -603,6 +620,11 @@ if (dayOfWeek >= 1 && dayOfWeek <= 5) {
   );
   if (workChip) workChip.classList.add('selected');
 }
+
+const codeChip = document.querySelector(
+  '#activity-chips .chip[data-value="Code"]',
+);
+if (codeChip) codeChip.classList.add('selected');
 
 const homeChip = document.querySelector(
   '#social-chips .chip[data-value="Home"]',
@@ -735,54 +757,69 @@ async function fetchWeatherAndLocation(lat, lng, isFallback) {
   }
 }
 
-if (!('geolocation' in navigator)) {
-  window.MoodyErrors.logError('geolocation', 'Geolocation not supported, using SF fallback');
-  fetchWeatherAndLocation(SF_LAT, SF_LNG, true);
-  // Assume home for auto-selections
-  if (dayOfWeek !== 5) {
-    const cookChip = document.querySelector('#activity-chips .chip[data-value="Cook"]');
+function handleLocation(lat, lng, isFallback) {
+  if (!isFallback) {
+    localStorage.setItem('moody_last_coords', JSON.stringify({ lat, lng, ts: Date.now() }));
+  }
+
+  const inBayArea =
+    lat >= 37.2 && lat <= 37.9 && lng >= -122.6 && lng <= -121.7;
+  const inStockton =
+    lat >= 37.85 && lat <= 38.1 && lng >= -121.5 && lng <= -121.1;
+  const isHome = inBayArea || inStockton;
+
+  if (!isHome) {
+    const travelChip = document.querySelector(
+      '#activity-expanded .chip[data-value="Travel"]',
+    );
+    if (travelChip) travelChip.classList.add('selected');
+  }
+
+  if (isHome && dayOfWeek !== 5) {
+    const cookChip = document.querySelector(
+      '#activity-chips .chip[data-value="Cook"]',
+    );
     if (cookChip) cookChip.classList.add('selected');
   }
-} else {
+
+  fetchWeatherAndLocation(lat, lng, isFallback);
+}
+
+function getCachedCoords() {
+  try {
+    const cached = JSON.parse(localStorage.getItem('moody_last_coords'));
+    if (cached && Date.now() - cached.ts < 24 * 60 * 60 * 1000) return cached;
+  } catch { /* ignore */ }
+  return null;
+}
+
+async function requestLocation() {
+  // Use cached coords if fresh (avoids iOS PWA re-prompting every launch)
+  const cached = getCachedCoords();
+  if (cached) {
+    window.MoodyErrors.logSuccess('geolocation', 'Using cached coords', `${cached.lat}, ${cached.lng}`);
+    handleLocation(cached.lat, cached.lng, false);
+    return;
+  }
+
+  if (!('geolocation' in navigator)) {
+    window.MoodyErrors.logError('geolocation', 'Geolocation not supported, using SF fallback');
+    handleLocation(SF_LAT, SF_LNG, true);
+    return;
+  }
+
+  // No cache — must request live location (will prompt on first use)
   navigator.geolocation.getCurrentPosition(
-    async (pos) => {
-    const lat = pos.coords.latitude;
-    const lng = pos.coords.longitude;
-    const inBayArea =
-      lat >= 37.2 && lat <= 37.9 && lng >= -122.6 && lng <= -121.7;
-    const inStockton =
-      lat >= 37.85 && lat <= 38.1 && lng >= -121.5 && lng <= -121.1;
-    const isHome = inBayArea || inStockton;
-
-    if (!isHome) {
-      const travelChip = document.querySelector(
-        '#activity-expanded .chip[data-value="Travel"]',
-      );
-      if (travelChip) travelChip.classList.add('selected');
-    }
-
-    // Auto-select Cook every day except Friday, not if traveling
-    if (isHome && dayOfWeek !== 5) {
-      const cookChip = document.querySelector(
-        '#activity-chips .chip[data-value="Cook"]',
-      );
-      if (cookChip) cookChip.classList.add('selected');
-    }
-
-    await fetchWeatherAndLocation(lat, lng, false);
-    },
+    (pos) => handleLocation(pos.coords.latitude, pos.coords.longitude, false),
     (err) => {
       window.MoodyErrors.logError('geolocation', 'Location unavailable, using SF fallback', err.message);
-      fetchWeatherAndLocation(SF_LAT, SF_LNG, true);
-      // Assume home for auto-selections
-      if (dayOfWeek !== 5) {
-        const cookChip = document.querySelector('#activity-chips .chip[data-value="Cook"]');
-        if (cookChip) cookChip.classList.add('selected');
-      }
+      handleLocation(SF_LAT, SF_LNG, true);
     },
     { enableHighAccuracy: true, timeout: 15000 },
   );
 }
+
+requestLocation();
 
 function weatherCodeInfo(code) {
   if (code === 0) return { emoji: '☀️', text: 'Clear' };
@@ -834,11 +871,20 @@ function showForm() {
   checkFormValidity();
 }
 
+let initAuthRetries = 0;
 function initAuth() {
   if (typeof google === 'undefined') {
-    window.addEventListener('load', () => {
-      setTimeout(initAuth, 500);
-    });
+    initAuthRetries++;
+    if (initAuthRetries > 20) {
+      window.MoodyErrors.logError('auth', 'Google GSI library failed to load after retries');
+      if (window.MoodySheets.hasConnected()) {
+        showForm();
+      } else {
+        signInBtn.style.display = 'block';
+      }
+      return;
+    }
+    setTimeout(initAuth, 500);
     return;
   }
 
